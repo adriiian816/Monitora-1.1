@@ -47,10 +47,29 @@
     <!-- Description & Deadline Card -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Petunjuk & Rincian Tugas</h2>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Petunjuk &amp; Rincian Tugas</h2>
             <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
                 {{ $tugas->deskripsi ?: 'Tidak ada instruksi tambahan.' }}
             </p>
+
+            @if($tugas->file_path)
+                <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
+                    <div class="flex items-center gap-3 truncate">
+                        <div class="w-9 h-9 rounded-lg bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">attachment</span>
+                        </div>
+                        <div class="truncate text-xs">
+                            <span class="font-bold text-[#064e3b] block truncate">{{ $tugas->file_original_name ?: basename($tugas->file_path) }}</span>
+                            <span class="text-slate-500 text-[11px]">Dokumen Lampiran / Template Tugas • {{ $tugas->formatted_file_size }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.tugas.download', $tugas) }}" 
+                       class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold shadow-xs transition shrink-0">
+                        <span class="material-symbols-outlined text-[16px]">download</span>
+                        <span>Unduh Lampiran Tugas</span>
+                    </a>
+                </div>
+            @endif
         </div>
 
         <div class="bg-gradient-to-br from-blue-950 via-slate-900 to-blue-900 text-white rounded-2xl p-6 shadow-sm flex flex-col justify-between border border-blue-900/60">
@@ -317,7 +336,7 @@
 
                 <div>
                     <label for="custom_note" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
-                        Catatan Khusus Bappeda (Opsional)
+                        Catatan Khusus Bidang Perekonomian &amp; Perdagangan (Opsional)
                     </label>
                     <textarea id="custom_note" 
                               name="custom_note" 

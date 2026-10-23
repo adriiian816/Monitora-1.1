@@ -187,4 +187,86 @@ class MonitoraOpdTest extends TestCase
             'tipe_pengingat' => 'konfirmasi_pengumpulan',
         ]);
     }
+
+    public function test_super_admin_can_view_opd_index_with_metrics(): void
+    {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+
+        $response = $this->actingAs($superAdmin)->get(route('admin.opd.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Master Data Instansi OPD');
+        $response->assertSee('Total Instansi');
+        $response->assertSee($this->opd->nama_opd);
+    }
+
+    public function test_super_admin_can_bulk_delete_opds(): void
+    {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+
+        $opd1 = Opd::create([
+            'kode_opd' => 'OPD1',
+            'nama_opd' => 'Dinas Testing Satu',
+            'is_active' => true,
+        ]);
+        $opd2 = Opd::create([
+            'kode_opd' => 'OPD2',
+            'nama_opd' => 'Dinas Testing Dua',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.opd.bulk-delete'), [
+            'opd_ids' => [$opd1->id, $opd2->id],
+        ]);
+
+        $response->assertRedirect(route('admin.opd.index'));
+        $this->assertDatabaseMissing('opds', ['id' => $opd1->id]);
+        $this->assertDatabaseMissing('opds', ['id' => $opd2->id]);
+    }
+
+    public function test_opd_can_download_task_attachment_provided_by_pic(): void
+    {
+        $file = UploadedFile::fake()->create('template_laporan.xlsx', 1024, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $path = $file->store('tugas', 'public');
+
+        $this->tugasDigital->update([
+            'file_path' => $path,
+            'file_original_name' => 'template_laporan.xlsx',
+            'file_size' => 1024 * 1024,
+        ]);
+
+        $response = $this->actingAs($this->opdUser)->get(route('opd.tugas.download', $this->tugasDigital));
+
+        $response->assertStatus(200);
+        $response->assertDownload('template_laporan.xlsx');
+    }
+
+    public function test_unauthorized_opd_cannot_download_task_attachment(): void
+    {
+        $otherOpd = Opd::create([
+            'kode_opd' => 'DISPORA',
+            'nama_opd' => 'Dinas Pemuda dan Olahraga',
+            'is_active' => true,
+        ]);
+
+        $otherOpdUser = User::factory()->create([
+            'name' => 'Staf Dispora',
+            'email' => 'dispora@malutprov.go.id',
+            'role' => 'opd',
+            'opd_id' => $otherOpd->id,
+        ]);
+
+        $file = UploadedFile::fake()->create('rahasia.pdf', 500, 'application/pdf');
+        $path = $file->store('tugas', 'public');
+
+        $this->tugasDigital->update([
+            'file_path' => $path,
+            'file_original_name' => 'rahasia.pdf',
+            'file_size' => 500 * 1024,
+        ]);
+
+        $response = $this->actingAs($otherOpdUser)->get(route('opd.tugas.download', $this->tugasDigital));
+
+        $response->assertStatus(403);
+    }
 }

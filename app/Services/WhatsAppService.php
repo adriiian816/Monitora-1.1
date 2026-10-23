@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Opd;
+use App\Models\Penugasan;
+use App\Models\PenugasanPenerima;
 use App\Models\Submission;
 use App\Models\Tugas;
 use App\Models\User;
@@ -15,6 +17,11 @@ class WhatsAppService
     protected string $provider;
 
     protected ?string $token;
+
+    /**
+     * Maximum WhatsApp messages allowed per hour per phone number to prevent number banning.
+     */
+    public const MAX_PER_HOUR_PER_NUMBER = 30;
 
     protected ?string $apiUrl;
 
@@ -29,6 +36,43 @@ class WhatsAppService
     }
 
     /**
+     * Clean and normalize Indonesian phone number (convert 08xx to 628xx).
+     */
+    public function cleanPhoneNumber(string $phone): string
+    {
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($cleanPhone, '0')) {
+            $cleanPhone = '62'.substr($cleanPhone, 1);
+        }
+
+        return $cleanPhone;
+    }
+
+    /**
+     * Count messages sent to this phone number within the last hour.
+     */
+    public function getHourlyCount(string $targetPhone): int
+    {
+        $cleanPhone = $this->cleanPhoneNumber($targetPhone);
+        if (empty($cleanPhone)) {
+            return 0;
+        }
+
+        return WhatsappLog::where('no_tujuan', $cleanPhone)
+            ->where('sent_at', '>=', now()->subHour())
+            ->whereIn('status', ['terkirim', 'simulasi'])
+            ->count();
+    }
+
+    /**
+     * Check if a phone number has exceeded the hourly rate limit.
+     */
+    public function isRateLimited(string $targetPhone): bool
+    {
+        return $this->getHourlyCount($targetPhone) >= self::MAX_PER_HOUR_PER_NUMBER;
+    }
+
+    /**
      * Send generic WhatsApp message and log into database.
      */
     public function send(
@@ -39,9 +83,30 @@ class WhatsAppService
         string $tipe = 'manual'
     ): WhatsappLog {
         // Clean phone number (convert 08xx to 628xx if needed)
-        $cleanPhone = preg_replace('/[^0-9]/', '', $targetPhone);
-        if (str_starts_with($cleanPhone, '0')) {
-            $cleanPhone = '62'.substr($cleanPhone, 1);
+        $cleanPhone = $this->cleanPhoneNumber($targetPhone);
+
+        // Rate limit check: Maksimal 30 pesan per jam per nomor
+        $hourlyCount = $this->getHourlyCount($cleanPhone);
+        if ($hourlyCount >= self::MAX_PER_HOUR_PER_NUMBER) {
+            Log::warning("WhatsApp send rate limit exceeded for {$cleanPhone}. Sent {$hourlyCount}/".self::MAX_PER_HOUR_PER_NUMBER.' messages in the last hour.');
+
+            return WhatsappLog::create([
+                'tugas_id' => $tugasId,
+                'opd_id' => $opdId,
+                'tipe_pengingat' => $tipe,
+                'no_tujuan' => $cleanPhone ?: $targetPhone,
+                'isi_pesan' => $message,
+                'status' => 'dibatasi',
+                'response_payload' => [
+                    'rate_limited' => true,
+                    'message' => 'Batas pengiriman notifikasi tercapai (maksimal 30 pesan per jam untuk nomor ini).',
+                    'error' => 'Batas pengiriman notifikasi tercapai (maksimal 30 pesan per jam untuk nomor ini).',
+                    'hourly_count' => $hourlyCount,
+                    'limit' => self::MAX_PER_HOUR_PER_NUMBER,
+                    'rejected_at' => now()->toIso8601String(),
+                ],
+                'sent_at' => now(),
+            ]);
         }
 
         $status = 'simulasi';
@@ -521,7 +586,7 @@ class WhatsAppService
         $submitterName = $submittedBy?->name ?? 'Staf OPD';
 
         // PICs assigned to handle this OPD
-        $picUsers = $opd->pics()->whereNotNull('no_hp')->get();
+        $picUsers = $opd->pics()->whereNotNull('no_hp')->where('no_hp', '!=', '')->get();
         $lastLog = null;
 
         foreach ($picUsers as $pic) {
@@ -563,6 +628,28 @@ class WhatsAppService
                 .'_Sistem Monitoring MONITORA Bappeda Malut_';
 
             return $this->send($admin->no_hp, $message, $tugas->id, $opd->id, 'pengumpulan_tugas');
+        }
+
+        // If still empty, fallback to Super Admin
+        if ($picUsers->isEmpty() && (! $tugas->admin || empty($tugas->admin->no_hp))) {
+            $superAdmin = User::where('role', 'super_admin')->whereNotNull('no_hp')->where('no_hp', '!=', '')->first();
+            if ($superAdmin) {
+                $message = "📥 *MONITORA: PENGUMPULAN TUGAS DARI OPD*\n"
+                    ."Yth. {$superAdmin->name} (Administrator Bappeda),\n\n"
+                    ."Instansi *{$opdName}* telah mengumpulkan dokumen/berkas penugasan:\n"
+                    ."📌 *Judul Tugas:* {$tugas->judul}\n"
+                    ."📂 *Format:* {$formatLabel}\n"
+                    .($submission->file_original_name ? "📄 *Berkas Dokumen:* {$submission->file_original_name} ({$submission->formatted_file_size})\n" : '')
+                    .($submission->konfirmasi_fisik ? "📦 *Penyerahan Fisik:* Telah diserahkan oleh {$submission->nama_pengantar} (No. Surat: {$submission->nomor_surat})\n" : '')
+                    .($submission->catatan_opd ? "💬 *Catatan OPD:* \"{$submission->catatan_opd}\"\n" : '')
+                    ."👤 *Pengunggah:* {$submitterName}\n"
+                    ."⏰ *Waktu:* {$submittedAt}\n\n"
+                    ."Silakan segera periksa dan verifikasi berkas melalui tautan berikut:\n"
+                    ."🔗 {$adminUrl}\n\n"
+                    .'_Sistem Monitoring MONITORA Bappeda Malut_';
+
+                return $this->send($superAdmin->no_hp, $message, $tugas->id, $opd->id, 'pengumpulan_tugas');
+            }
         }
 
         return $lastLog;
@@ -673,5 +760,230 @@ class WhatsAppService
                 'message' => 'Tidak dapat terhubung ke bot WhatsApp: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Generate dynamic, randomized WhatsApp message for penugasan anggota bidang
+     * to avoid duplicate/identical template patterns that risk WhatsApp banning.
+     */
+    public function generateVariedPenugasanMessage(Penugasan $penugasan, User $anggota): string
+    {
+        $headers = [
+            '📋 *PENUGASAN BARU - BIDANG PEREKONOMIAN & PERDAGANGAN*',
+            '📢 *INSTRUKSI PENUGASAN BIDANG EKOP*',
+            '📌 *INFORMASI DELEGASI TUGAS - BAPPEDA MALUT*',
+            '✨ *AGENDA PENUGASAN INTERNAL BIDANG EKOP*',
+            '📂 *NOTIFIKASI TUGAS BARU - BIDANG EKOP BAPPEDA*',
+        ];
+
+        $greetings = [
+            "Yth. {$anggota->name},",
+            "Yth. Rekan {$anggota->name},",
+            "Salam hormat {$anggota->name},",
+            "Kepada Yth. {$anggota->name},",
+            "Halo {$anggota->name},",
+        ];
+
+        $pemberiName = $penugasan->pemberi?->name ?? 'Admin Bidang Ekop';
+
+        $intros = [
+            "Anda mendapatkan penugasan baru dari *{$pemberiName}*:",
+            "Pimpinan/Admin *{$pemberiName}* telah mendelegasikan tugas kegiatan berikut kepada Anda:",
+            "Terdapat agenda penugasan baru yang ditugaskan oleh *{$pemberiName}*:",
+            "Berikut rincian instruksi tugas baru dari *{$pemberiName}*:",
+            "Mohon atensinya, Anda telah didelegasikan oleh *{$pemberiName}* untuk kegiatan berikut:",
+        ];
+
+        $tanggalKegiatan = $penugasan->tanggal_kegiatan->translatedFormat('l, d F Y');
+        $batasLaporan = $penugasan->batas_laporan
+            ? $penugasan->batas_laporan->translatedFormat('l, d F Y')
+            : 'Tidak ditentukan';
+
+        // Varied bullet structures & icons
+        $fieldStyles = [
+            [
+                'judul' => "📌 *Judul Tugas:* {$penugasan->judul}",
+                'tgl' => "📅 *Tanggal Kegiatan:* {$tanggalKegiatan}",
+                'batas' => "📊 *Batas Laporan:* {$batasLaporan}",
+            ],
+            [
+                'judul' => "🎯 *Nama Kegiatan:* {$penugasan->judul}",
+                'tgl' => "🗓️ *Waktu Pelaksanaan:* {$tanggalKegiatan}",
+                'batas' => "⏳ *Tenggat Laporan:* {$batasLaporan}",
+            ],
+            [
+                'judul' => "🏷️ *Uraian Agenda:* {$penugasan->judul}",
+                'tgl' => "📆 *Hari/Tanggal:* {$tanggalKegiatan}",
+                'batas' => "⏰ *Batas Akhir Laporan:* {$batasLaporan}",
+            ],
+            [
+                'judul' => "📝 *Topik Penugasan:* {$penugasan->judul}",
+                'tgl' => "📍 *Jadwal Kegiatan:* {$tanggalKegiatan}",
+                'batas' => "⏱️ *Batas Pengumpulan:* {$batasLaporan}",
+            ],
+        ];
+
+        $ctas = [
+            'Silakan segera tinjau dan konfirmasi penugasan serta laporkan progres melalui portal MONITORA:',
+            'Harap mengakses sistem MONITORA untuk konfirmasi kesiapan dan mengumpulkan laporan hasil:',
+            'Mohon konfirmasikan kesiapan tugas dan serahkan laporan hasil di MONITORA:',
+            'Akses tautan MONITORA berikut untuk konfirmasi penugasan dan pengumpulan laporan:',
+        ];
+
+        $signoffs = [
+            '_Pesan otomatis ini dikirim oleh Sistem MONITORA Bappeda Maluku Utara._',
+            '_Sistem Monitoring MONITORA - Bappeda Provinsi Maluku Utara._',
+            '_Layanan Notifikasi Penugasan MONITORA Bidang Ekop Malut._',
+            '_Notifikasi resmi otomatis dari MONITORA Bappeda Maluku Utara._',
+        ];
+
+        $header = $headers[array_rand($headers)];
+        $greeting = $greetings[array_rand($greetings)];
+        $intro = $intros[array_rand($intros)];
+        $fields = $fieldStyles[array_rand($fieldStyles)];
+        $cta = $ctas[array_rand($ctas)];
+        $signoff = $signoffs[array_rand($signoffs)];
+
+        $appUrl = url('/admin/penugasan/'.$penugasan->id);
+
+        $body = "{$header}\n"
+            ."{$greeting}\n\n"
+            ."{$intro}\n"
+            ."{$fields['judul']}\n"
+            ."{$fields['tgl']}\n"
+            ."{$fields['batas']}\n";
+
+        if ($penugasan->deskripsi) {
+            $descLabels = ['📝 *Keterangan:* ', 'ℹ️ *Deskripsi Tugas:* ', '📋 *Uraian:* '];
+            $descLabel = $descLabels[array_rand($descLabels)];
+            $body .= "{$descLabel}{$penugasan->deskripsi}\n";
+        }
+
+        if ($penugasan->catatan) {
+            $catatanLabels = ['💬 *Catatan Khusus:* ', '💡 *Catatan Pimpinan:* ', '📌 *Instruksi Tambahan:* '];
+            $catLabel = $catatanLabels[array_rand($catatanLabels)];
+            $body .= "{$catLabel}{$penugasan->catatan}\n";
+        }
+
+        // Anti-duplicate micro-tag so message hash is never identical
+        $uniqueCode = strtoupper(substr(md5($penugasan->id.'_'.$anggota->id.'_'.uniqid('', true)), 0, 6));
+        $timestamp = now()->format('H:i:s');
+
+        $body .= "\n{$cta}\n"
+            ."🔗 {$appUrl}\n\n"
+            ."{$signoff}\n"
+            ."_Ref: #{$uniqueCode} • {$timestamp} WIT_";
+
+        return $body;
+    }
+
+    /**
+     * Send WhatsApp notification to a Bidang Ekop anggota when a new penugasan is assigned.
+     */
+    public function sendPenugasanToAnggota(Penugasan $penugasan, User $anggota): ?WhatsappLog
+    {
+        if (empty($anggota->no_hp)) {
+            return null;
+        }
+
+        $message = $this->generateVariedPenugasanMessage($penugasan, $anggota);
+
+        return $this->send($anggota->no_hp, $message, null, null, 'penugasan_ekop');
+    }
+
+    /**
+     * Send WhatsApp notification to Admin when an anggota confirms/responds to penugasan.
+     */
+    public function sendKonfirmasiPenugasanToAdmin(
+        Penugasan $penugasan,
+        User $anggota,
+        string $statusKonfirmasi,
+        ?string $catatan = null
+    ): ?WhatsappLog {
+        $pemberi = $penugasan->pemberi;
+        if (! $pemberi || empty($pemberi->no_hp)) {
+            return null;
+        }
+
+        $appUrl = url('/admin/penugasan/'.$penugasan->id);
+        $statusText = match ($statusKonfirmasi) {
+            'dikonfirmasi' => '✅ BERSEDIA & SIAP MELAKSANAKAN',
+            'ditolak' => '❌ BERHALANGAN / MENOLAK TUGAS',
+            default => 'MENUNGGU KONFIRMASI',
+        };
+        $waktu = now()->translatedFormat('l, d F Y - H:i').' WIT';
+
+        $message = "📢 *MONITORA: RESPON PENUGASAN INTERNAL*\n"
+            ."Yth. {$pemberi->name},\n\n"
+            ."Anggota Bidang *{$anggota->name}* telah merespons penugasan kegiatan:\n"
+            ."📌 *Kegiatan:* {$penugasan->judul}\n"
+            ."📊 *Status:* {$statusText}\n"
+            .($catatan ? "💬 *Catatan Anggota:* \"{$catatan}\"\n" : '')
+            ."⏰ *Waktu:* {$waktu}\n\n"
+            ."Lihat detail lengkap di portal MONITORA:\n"
+            ."🔗 {$appUrl}\n\n"
+            .'_Sistem Monitoring MONITORA Bappeda Malut_';
+
+        return $this->send($pemberi->no_hp, $message, null, null, 'konfirmasi_penugasan');
+    }
+
+    /**
+     * Send WhatsApp notification to Admin when an anggota submits a report.
+     */
+    public function sendLaporanPenugasanToAdmin(
+        Penugasan $penugasan,
+        User $anggota,
+        PenugasanPenerima $pivot
+    ): ?WhatsappLog {
+        $pemberi = $penugasan->pemberi;
+        if (! $pemberi || empty($pemberi->no_hp)) {
+            return null;
+        }
+
+        $appUrl = url('/admin/penugasan/'.$penugasan->id);
+        $waktu = now()->translatedFormat('l, d F Y - H:i').' WIT';
+
+        $message = "📥 *MONITORA: PENGUMPULAN LAPORAN BIDANG*\n"
+            ."Yth. {$pemberi->name},\n\n"
+            ."Anggota Bidang *{$anggota->name}* telah mengumpulkan laporan kegiatan:\n"
+            ."📌 *Kegiatan:* {$penugasan->judul}\n"
+            .($pivot->file_laporan_name ? "📄 *Berkas Laporan:* {$pivot->file_laporan_name} ({$pivot->formatted_file_size})\n" : '')
+            .($pivot->isi_laporan ? "📝 *Ringkasan Hasil:* \"{$pivot->isi_laporan}\"\n" : '')
+            .($pivot->link_dokumen ? "🔗 *Link Dokumen:* {$pivot->link_dokumen}\n" : '')
+            ."⏰ *Waktu:* {$waktu}\n\n"
+            ."Silakan periksa laporan melalui tautan berikut:\n"
+            ."🔗 {$appUrl}\n\n"
+            .'_Sistem Monitoring MONITORA Bappeda Malut_';
+
+        return $this->send($pemberi->no_hp, $message, null, null, 'laporan_penugasan');
+    }
+
+    /**
+     * Send WhatsApp confirmation to Anggota after submitting report.
+     */
+    public function sendLaporanConfirmationToAnggota(
+        Penugasan $penugasan,
+        User $anggota,
+        PenugasanPenerima $pivot
+    ): ?WhatsappLog {
+        if (empty($anggota->no_hp)) {
+            return null;
+        }
+
+        $appUrl = url('/admin/penugasan/'.$penugasan->id);
+        $waktu = now()->translatedFormat('l, d F Y - H:i').' WIT';
+
+        $message = "✅ *MONITORA: BUKTI PENGUMPULAN LAPORAN*\n"
+            ."Yth. {$anggota->name},\n\n"
+            ."Laporan hasil kegiatan Anda telah berhasil tersimpan di sistem:\n"
+            ."📌 *Kegiatan:* {$penugasan->judul}\n"
+            .($pivot->file_laporan_name ? "📄 *Berkas:* {$pivot->file_laporan_name} ({$pivot->formatted_file_size})\n" : '')
+            ."⏰ *Waktu:* {$waktu}\n"
+            ."📊 *Status:* Laporan Berhasil Dikumpulkan\n\n"
+            ."Terima kasih atas dedikasi dan kinerjanya.\n"
+            ."🔗 Tautan: {$appUrl}\n\n"
+            .'_BAPPEDA Bidang Perekonomian dan Perdagangan Maluku Utara_';
+
+        return $this->send($anggota->no_hp, $message, null, null, 'konfirmasi_laporan');
     }
 }

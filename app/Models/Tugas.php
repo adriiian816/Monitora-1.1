@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'admin_id',
     'judul',
     'deskripsi',
+    'file_path',
+    'file_original_name',
+    'file_size',
     'format_pengumpulan',
     'deadline',
     'tahun_anggaran',
@@ -125,5 +128,29 @@ class Tugas extends Model
         }
 
         return 'Sisa kurang dari 1 menit';
+    }
+
+    /**
+     * Formatted file size (KB / MB).
+     */
+    public function getFormattedFileSizeAttribute(): string
+    {
+        if (! $this->file_size) {
+            return '-';
+        }
+
+        if ($this->file_size < 1024 * 1024) {
+            return round($this->file_size / 1024, 1).' KB';
+        }
+
+        return round($this->file_size / (1024 * 1024), 2).' MB';
+    }
+
+    /**
+     * Check if task has an attachment file.
+     */
+    public function hasAttachment(): bool
+    {
+        return ! empty($this->file_path);
     }
 }

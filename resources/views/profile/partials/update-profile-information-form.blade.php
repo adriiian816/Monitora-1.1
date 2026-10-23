@@ -47,14 +47,12 @@
             @endif
         </div>
 
-        @if ($user->isOpd())
-            <div>
-                <x-input-label for="no_hp" value="Nomor WhatsApp / HP Aktif" />
-                <x-text-input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full font-mono rounded-xl text-sm" :value="old('no_hp', $user->no_hp)" placeholder="Contoh: 081234567890" />
-                <p class="mt-1.5 text-xs text-slate-500">Nomor ini digunakan oleh Bappeda untuk mengirimkan pengingat deadline dan notifikasi penugasan via WhatsApp.</p>
-                <x-input-error class="mt-2" :messages="$errors->get('no_hp')" />
-            </div>
-        @endif
+        <div>
+            <x-input-label for="no_hp" value="Nomor WhatsApp / HP Aktif" />
+            <x-text-input id="no_hp" name="no_hp" type="text" class="mt-1 block w-full font-mono rounded-xl text-sm" :value="old('no_hp', $user->no_hp)" placeholder="Contoh: 081234567890" />
+            <p class="mt-1.5 text-xs text-slate-500">Nomor ini digunakan untuk menerima notifikasi penugasan baru kegiatan dan pengingat via WhatsApp.</p>
+            <x-input-error class="mt-2" :messages="$errors->get('no_hp')" />
+        </div>
 
         <div class="flex items-center gap-4 pt-2">
             <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-sm transition">

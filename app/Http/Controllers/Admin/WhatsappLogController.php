@@ -55,9 +55,10 @@ class WhatsappLogController extends Controller
 
         $totalTerkirim = (clone $metricQuery)->where('status', 'terkirim')->count();
         $totalSimulasi = (clone $metricQuery)->where('status', 'simulasi')->count();
+        $totalDibatasi = (clone $metricQuery)->where('status', 'dibatasi')->count();
         $totalGagal = (clone $metricQuery)->where('status', 'gagal')->count();
 
-        return view('admin.whatsapp-logs.index', compact('logs', 'totalTerkirim', 'totalSimulasi', 'totalGagal'));
+        return view('admin.whatsapp-logs.index', compact('logs', 'totalTerkirim', 'totalSimulasi', 'totalDibatasi', 'totalGagal'));
     }
 
     /**

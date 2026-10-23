@@ -46,6 +46,7 @@ class UserController extends Controller
         $totalUsers = User::count();
         $totalSuperAdmin = User::where('role', 'super_admin')->count();
         $totalAdmin = User::where('role', 'admin')->count();
+        $totalAnggotaBidang = User::where('role', 'anggota_bidang')->count();
         $totalOpd = User::where('role', 'opd')->count();
 
         return view('admin.users.index', compact(
@@ -53,6 +54,7 @@ class UserController extends Controller
             'totalUsers',
             'totalSuperAdmin',
             'totalAdmin',
+            'totalAnggotaBidang',
             'totalOpd'
         ));
     }
@@ -76,8 +78,9 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'no_hp' => ['nullable', 'string', 'max:25'],
+            'bidang' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'string', 'in:super_admin,admin,opd'],
+            'role' => ['required', 'string', 'in:super_admin,admin,anggota_bidang,opd'],
             'opd_id' => [
                 'nullable',
                 Rule::requiredIf(fn () => $request->role === 'opd'),
@@ -89,10 +92,16 @@ class UserController extends Controller
             'opd_id.required_if' => 'Instansi OPD wajib dipilih untuk akun dengan peran Staf OPD.',
         ]);
 
+        $bidang = $validated['bidang'] ?? null;
+        if ($validated['role'] === 'anggota_bidang' && empty($bidang)) {
+            $bidang = 'ekop';
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'no_hp' => $validated['role'] === 'opd' ? ($validated['no_hp'] ?? null) : null,
+            'no_hp' => $validated['no_hp'] ?? null,
+            'bidang' => $bidang,
             'password' => Hash::make($validated['password']),
             'role' => $validated['role'],
             'opd_id' => $validated['role'] === 'opd' ? $validated['opd_id'] : null,
@@ -127,7 +136,8 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'no_hp' => ['nullable', 'string', 'max:25'],
-            'role' => ['required', 'string', 'in:super_admin,admin,opd'],
+            'bidang' => ['nullable', 'string', 'max:50'],
+            'role' => ['required', 'string', 'in:super_admin,admin,anggota_bidang,opd'],
             'opd_id' => [
                 'nullable',
                 Rule::requiredIf(fn () => $request->role === 'opd'),
@@ -145,11 +155,17 @@ class UserController extends Controller
             return back()->withErrors(['role' => 'Anda tidak dapat menurunkan peran akun Admin yang sedang aktif digunakan.']);
         }
 
+        $bidang = $validated['bidang'] ?? null;
+        if ($validated['role'] === 'anggota_bidang' && empty($bidang)) {
+            $bidang = 'ekop';
+        }
+
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->role = $validated['role'];
         $user->opd_id = $validated['role'] === 'opd' ? $validated['opd_id'] : null;
-        $user->no_hp = $validated['role'] === 'opd' ? ($validated['no_hp'] ?? null) : null;
+        $user->no_hp = $validated['no_hp'] ?? null;
+        $user->bidang = $bidang;
 
         if (! empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
@@ -182,5 +198,28 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', "Akun '{$name}' berhasil dihapus.");
+    }
+
+    /**
+     * Remove multiple users from storage.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array', 'min:1'],
+            'user_ids.*' => ['exists:users,id'],
+        ]);
+
+        // Exclude current authenticated user
+        $idsToDelete = collect($validated['user_ids'])->reject(fn ($id) => (int) $id === Auth::id())->values();
+
+        if ($idsToDelete->isEmpty()) {
+            return back()->with('error', 'Tidak ada akun yang dapat dihapus (akun Anda sendiri tidak dapat dihapus).');
+        }
+
+        $count = User::whereIn('id', $idsToDelete)->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Berhasil menghapus {$count} data akun pengguna.");
     }
 }

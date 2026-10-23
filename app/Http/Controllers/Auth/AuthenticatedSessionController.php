@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
 
         // 2. Jika ada penanda server baru dihidupkan, bersihkan sesi yang aktif sebelum server dinyalakan
         $serverBootFile = storage_path('framework/server_booted_at');
-        if (file_exists($serverBootFile)) {
+        if (! app()->environment('testing') && file_exists($serverBootFile)) {
             $bootTime = (int) @file_get_contents($serverBootFile);
             if ($bootTime > 0) {
                 DB::table('sessions')->where('last_activity', '<', $bootTime)->delete();

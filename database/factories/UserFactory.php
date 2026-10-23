@@ -57,11 +57,12 @@ class UserFactory extends Factory
     /**
      * Indicate that the user is an admin.
      */
-    public function admin(): static
+    public function admin(?string $noHp = null): static
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'admin',
             'opd_id' => null,
+            'no_hp' => $noHp,
         ]);
     }
 
@@ -73,6 +74,19 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'role' => 'opd',
             'opd_id' => $opdId,
+            'no_hp' => $noHp ?? '0812'.fake()->numerify('########'),
+        ]);
+    }
+
+    /**
+     * Indicate that the user is an anggota bidang ekop.
+     */
+    public function anggotaBidang(?string $noHp = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'anggota_bidang',
+            'bidang' => 'ekop',
+            'opd_id' => null,
             'no_hp' => $noHp ?? '0812'.fake()->numerify('########'),
         ]);
     }

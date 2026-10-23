@@ -8,17 +8,15 @@
                 <!-- Logo & Brand -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 group focus:outline-none">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-700 to-sky-500 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform shrink-0">
-                            M
-                        </div>
+                        <img src="{{ asset('logo.png') }}" alt="MONITORA" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;" class="w-9 h-9 rounded-xl object-cover shadow-sm group-hover:scale-105 transition-transform shrink-0">
                         <div class="leading-tight">
                             <div class="font-extrabold text-sm xl:text-base tracking-wider text-white flex items-center gap-1.5">
                                 MONITORA
                                 <span class="text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30">
-                                    BAPPEDA
+                                    EKOP &amp; DAGANG
                                 </span>
                             </div>
-                            <span class="block text-[10px] text-blue-200/80 font-medium">Provinsi Maluku Utara</span>
+                            <span class="block text-[10px] text-blue-200/80 font-medium">Bappeda Provinsi Maluku Utara</span>
                         </div>
                     </a>
                 </div>
@@ -36,11 +34,18 @@
                             <span>Dashboard</span>
                         </a>
 
-                        <!-- Tugas Bappeda -->
+                        <!-- Penugasan OPD -->
                         <a href="{{ route('admin.tugas.index') }}" 
                            class="inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-medium transition-all duration-150 whitespace-nowrap {{ request()->routeIs('admin.tugas.*') ? 'bg-blue-800/90 text-white font-semibold border border-blue-600/50 shadow-sm' : 'text-blue-200/90 hover:text-white hover:bg-blue-900/60 border border-transparent' }}">
                             <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.tugas.*') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                            <span>Tugas Bappeda</span>
+                            <span>Penugasan OPD</span>
+                        </a>
+
+                        <!-- Penugasan Bidang Ekop -->
+                        <a href="{{ route('admin.penugasan.index') }}" 
+                           class="inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-medium transition-all duration-150 whitespace-nowrap {{ request()->routeIs('admin.penugasan.*') ? 'bg-blue-800/90 text-white font-semibold border border-blue-600/50 shadow-sm' : 'text-blue-200/90 hover:text-white hover:bg-blue-900/60 border border-transparent' }}">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.penugasan.*') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                            <span>Penugasan Bidang</span>
                         </a>
 
                         @if(Auth::user()->isSuperAdmin())
@@ -72,10 +77,21 @@
                             <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.whatsapp-logs.*') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                             <span>Log Notifikasi WA</span>
                         </a>
-                    @else
-                        <!-- OPD: Dashboard -->
-                        <a href="{{ route('opd.dashboard') }}" 
-                           class="inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-medium transition-all duration-150 whitespace-nowrap {{ request()->routeIs('opd.dashboard') ? 'bg-blue-800/90 text-white font-semibold border border-blue-600/50 shadow-sm' : 'text-blue-200/90 hover:text-white hover:bg-blue-900/60 border border-transparent' }}">
+                    @elseif(Auth::user()->isAnggotaBidang())
+                        <!-- Anggota Bidang: Dashboard -->
+                        <a href="{{ route('bidang.dashboard') }}" 
+                           class="inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-medium transition-all duration-150 whitespace-nowrap {{ request()->routeIs('bidang.dashboard') ? 'bg-blue-800/90 text-white font-semibold border border-blue-600/50 shadow-sm' : 'text-blue-200/90 hover:text-white hover:bg-blue-900/60 border border-transparent' }}">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('bidang.dashboard') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                            <span>Dashboard</span>
+                        </a>
+
+                        <!-- Anggota Bidang: Penugasan Bidang -->
+                        <a href="{{ route('admin.penugasan.index') }}" 
+                           class="inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-[13px] font-medium transition-all duration-150 whitespace-nowrap {{ request()->routeIs('admin.penugasan.*') ? 'bg-blue-800/90 text-white font-semibold border border-blue-600/50 shadow-sm' : 'text-blue-200/90 hover:text-white hover:bg-blue-900/60 border border-transparent' }}">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.penugasan.*') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                            <span>Penugasan Bidang</span>
+                        </a>
+                    @elseif(Auth::user()->isOpd())
                             <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('opd.dashboard') ? 'text-sky-300' : 'text-blue-300/70' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                             <span>Dashboard</span>
                         </a>
@@ -162,7 +178,11 @@
             </a>
             <a href="{{ route('admin.tugas.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.tugas.*') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-900' }}">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                Tugas Bappeda
+                Penugasan OPD
+            </a>
+            <a href="{{ route('admin.penugasan.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.penugasan.*') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-900' }}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Penugasan Bidang Ekop
             </a>
 
             @if(Auth::user()->isSuperAdmin())
@@ -184,8 +204,16 @@
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                 Log Notifikasi WA
             </a>
-        @else
-            <a href="{{ route('opd.dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('opd.dashboard') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-900' }}">
+        @elseif(Auth::user()->isAnggotaBidang())
+            <a href="{{ route('bidang.dashboard') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('bidang.dashboard') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-900' }}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+            <a href="{{ route('admin.penugasan.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold {{ request()->routeIs('admin.penugasan.*') ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-900' }}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Penugasan Bidang Ekop
+            </a>
+        @elseif(Auth::user()->isOpd())
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                 Dashboard
             </a>

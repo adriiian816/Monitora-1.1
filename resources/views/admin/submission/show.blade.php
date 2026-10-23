@@ -91,7 +91,7 @@
                                 </div>
 
                                 <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 sm:col-span-2">
-                                    <span class="text-slate-500 font-semibold block uppercase tracking-wider text-[10px]">Tanggal Penyerahan Fisik ke Bappeda:</span>
+                                    <span class="text-slate-500 font-semibold block uppercase tracking-wider text-[10px]">Tanggal Penyerahan Fisik ke Bidang:</span>
                                     <span class="text-sm font-bold text-slate-900 mt-1 block">
                                         {{ $submission->tanggal_penyerahan_fisik ? $submission->tanggal_penyerahan_fisik->translatedFormat('l, d F Y') : '-' }}
                                     </span>
@@ -121,7 +121,7 @@
             <div class="space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-20">
                     <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 pb-2 border-b border-slate-100">
-                        Formulir Verifikasi Bappeda
+                        Formulir Verifikasi Bidang Perekonomian &amp; Perdagangan
                     </h2>
 
                     <!-- Current Status Indicator -->

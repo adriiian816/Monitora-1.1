@@ -12,8 +12,10 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TugasController extends Controller
 {
@@ -110,6 +112,7 @@ class TugasController extends Controller
         $validated = $request->validate([
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
+            'file_tugas' => ['nullable', 'file', 'max:25600', 'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/vnd.rar,text/csv,application/csv,application/octet-stream'],
             'format_pengumpulan' => ['required', 'in:digital,fisik,hybrid'],
             'deadline' => ['required', 'date', 'after:now'],
             'tahun_anggaran' => ['required', 'string', 'max:10'],
@@ -122,10 +125,24 @@ class TugasController extends Controller
             'opd_ids.*.in' => 'Anda hanya berwenang menugaskan OPD yang berada di bawah pengelolaan Anda.',
         ]);
 
+        $filePath = null;
+        $fileName = null;
+        $fileSize = null;
+
+        if ($request->hasFile('file_tugas')) {
+            $file = $request->file('file_tugas');
+            $fileName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+            $filePath = $file->store('tugas', 'public');
+        }
+
         $tugas = Tugas::create([
             'admin_id' => $user->id,
             'judul' => $validated['judul'],
             'deskripsi' => $validated['deskripsi'] ?? null,
+            'file_path' => $filePath,
+            'file_original_name' => $fileName,
+            'file_size' => $fileSize,
             'format_pengumpulan' => $validated['format_pengumpulan'],
             'deadline' => $validated['deadline'],
             'tahun_anggaran' => $validated['tahun_anggaran'],
@@ -281,6 +298,8 @@ class TugasController extends Controller
         $validated = $request->validate([
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
+            'file_tugas' => ['nullable', 'file', 'max:25600', 'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip,application/x-zip-compressed,application/x-rar-compressed,application/vnd.rar,text/csv,application/csv,application/octet-stream'],
+            'hapus_file_tugas' => ['nullable', 'boolean'],
             'format_pengumpulan' => ['required', 'in:digital,fisik,hybrid'],
             'deadline' => ['required', 'date'],
             'tahun_anggaran' => ['required', 'string', 'max:10'],
@@ -291,9 +310,35 @@ class TugasController extends Controller
             'opd_ids.*.in' => 'Anda hanya berwenang memilih OPD yang berada di bawah pengelolaan Anda.',
         ]);
 
+        $filePath = $tugas->file_path;
+        $fileName = $tugas->file_original_name;
+        $fileSize = $tugas->file_size;
+
+        if ($request->boolean('hapus_file_tugas')) {
+            if ($tugas->file_path && Storage::disk('public')->exists($tugas->file_path)) {
+                Storage::disk('public')->delete($tugas->file_path);
+            }
+            $filePath = null;
+            $fileName = null;
+            $fileSize = null;
+        }
+
+        if ($request->hasFile('file_tugas')) {
+            if ($tugas->file_path && Storage::disk('public')->exists($tugas->file_path)) {
+                Storage::disk('public')->delete($tugas->file_path);
+            }
+            $file = $request->file('file_tugas');
+            $fileName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+            $filePath = $file->store('tugas', 'public');
+        }
+
         $tugas->update([
             'judul' => $validated['judul'],
             'deskripsi' => $validated['deskripsi'] ?? null,
+            'file_path' => $filePath,
+            'file_original_name' => $fileName,
+            'file_size' => $fileSize,
             'format_pengumpulan' => $validated['format_pengumpulan'],
             'deadline' => $validated['deadline'],
             'tahun_anggaran' => $validated['tahun_anggaran'],
@@ -413,5 +458,27 @@ class TugasController extends Controller
             'Content-Type' => 'text/calendar; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
         ]);
+    }
+
+    /**
+     * Download the task attachment/template file.
+     */
+    public function downloadFile(Request $request, Tugas $tugas): StreamedResponse
+    {
+        $user = $request->user();
+        if ($user && $user->isAdmin()) {
+            $hasAccess = $tugas->admin_id === $user->id || $tugas->tugasOpd()->whereIn('opd_id', $user->handledOpdIds())->exists();
+            if (! $hasAccess) {
+                abort(403, 'Anda tidak memiliki hak akses untuk mengunduh lampiran tugas ini.');
+            }
+        }
+
+        if (! $tugas->file_path || ! Storage::disk('public')->exists($tugas->file_path)) {
+            abort(404, 'File lampiran tugas tidak ditemukan di penyimpanan server.');
+        }
+
+        $fileName = $tugas->file_original_name ?: basename($tugas->file_path);
+
+        return Storage::disk('public')->download($tugas->file_path, $fileName);
     }
 }

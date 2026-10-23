@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Opd;
+use App\Models\Penugasan;
 use App\Models\Submission;
 use App\Models\Tugas;
 use App\Models\TugasOpd;
@@ -120,6 +121,65 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Calendar Events: Penugasan OPD (deadlines) & Penugasan Bidang (kegiatan & batas laporan)
+        $tugasCalendarQuery = Tugas::query()->where('status', '!=', 'dibatalkan');
+        if ($isPic) {
+            $tugasCalendarQuery->whereHas('tugasOpd', fn ($q) => $q->whereIn('opd_id', $handledOpdIds));
+        }
+        $tugasEvents = $tugasCalendarQuery->get()
+            ->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'type' => 'tugas_opd',
+                    'type_label' => 'Penugasan OPD',
+                    'title' => $t->judul,
+                    'date' => $t->deadline ? $t->deadline->format('Y-m-d') : null,
+                    'time' => $t->deadline ? $t->deadline->format('H:i').' WIT' : null,
+                    'url' => route('admin.tugas.show', $t->id),
+                    'badge_color' => 'emerald',
+                    'status' => $t->status,
+                    'detail' => 'Format: '.($t->format_label ?? 'Digital').' • TA '.$t->tahun_anggaran,
+                ];
+            })->filter(fn ($e) => ! empty($e['date']));
+
+        $penugasanEvents = Penugasan::with('penerima')
+            ->get()
+            ->flatMap(function ($p) {
+                $items = [];
+                if ($p->tanggal_kegiatan) {
+                    $items[] = [
+                        'id' => $p->id,
+                        'type' => 'penugasan_bidang',
+                        'type_label' => 'Kegiatan Bidang',
+                        'title' => $p->judul,
+                        'date' => $p->tanggal_kegiatan->format('Y-m-d'),
+                        'time' => 'Kegiatan',
+                        'url' => route('admin.penugasan.show', $p->id),
+                        'badge_color' => 'indigo',
+                        'status' => 'aktif',
+                        'detail' => 'Tim: '.($p->penerima->pluck('name')->take(2)->join(', ') ?: 'Anggota Bidang').($p->penerima->count() > 2 ? ' +'.($p->penerima->count() - 2) : ''),
+                    ];
+                }
+                if ($p->batas_laporan && (! $p->tanggal_kegiatan || $p->batas_laporan->format('Y-m-d') !== $p->tanggal_kegiatan->format('Y-m-d'))) {
+                    $items[] = [
+                        'id' => $p->id,
+                        'type' => 'penugasan_laporan',
+                        'type_label' => 'Batas Laporan Bidang',
+                        'title' => '[Laporan] '.$p->judul,
+                        'date' => $p->batas_laporan->format('Y-m-d'),
+                        'time' => 'Batas Laporan',
+                        'url' => route('admin.penugasan.show', $p->id),
+                        'badge_color' => 'amber',
+                        'status' => 'aktif',
+                        'detail' => 'Batas penyerahan laporan kegiatan',
+                    ];
+                }
+
+                return $items;
+            });
+
+        $calendarEvents = $tugasEvents->concat($penugasanEvents)->values();
+
         return view('admin.dashboard', compact(
             'totalOpd',
             'totalTugasAktif',
@@ -131,7 +191,8 @@ class DashboardController extends Controller
             'submissionsMenunggu',
             'recentLogs',
             'isPic',
-            'handledOpdIds'
+            'handledOpdIds',
+            'calendarEvents'
         ));
     }
 }

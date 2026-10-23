@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Opd;
+use App\Models\TugasOpd;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +40,18 @@ class OpdController extends Controller
 
         $opds = $query->orderBy('nama_opd')->paginate(10)->withQueryString();
 
-        return view('admin.opd.index', compact('opds'));
+        $totalOpds = Opd::count();
+        $totalActiveOpds = Opd::where('is_active', true)->count();
+        $totalStaff = User::where('role', 'opd')->count();
+        $totalTugas = TugasOpd::count();
+
+        return view('admin.opd.index', compact(
+            'opds',
+            'totalOpds',
+            'totalActiveOpds',
+            'totalStaff',
+            'totalTugas'
+        ));
     }
 
     /**
@@ -130,5 +142,35 @@ class OpdController extends Controller
 
         return redirect()->route('admin.opd.index')
             ->with('success', "Data OPD '{$namaOpd}' berhasil dihapus.");
+    }
+
+    /**
+     * Remove multiple OPDs from storage.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'opd_ids' => ['required', 'array', 'min:1'],
+            'opd_ids.*' => ['exists:opds,id'],
+        ]);
+
+        $opds = Opd::with(['tugasOpd.submission', 'users'])->whereIn('id', $validated['opd_ids'])->get();
+
+        foreach ($opds as $opd) {
+            foreach ($opd->tugasOpd as $tugasOpd) {
+                if ($tugasOpd->submission && $tugasOpd->submission->file_path) {
+                    if (Storage::disk('public')->exists($tugasOpd->submission->file_path)) {
+                        Storage::disk('public')->delete($tugasOpd->submission->file_path);
+                    }
+                }
+            }
+            $opd->users()->delete();
+            $opd->delete();
+        }
+
+        $count = $opds->count();
+
+        return redirect()->route('admin.opd.index')
+            ->with('success', "Berhasil menghapus {$count} data instansi OPD.");
     }
 }

@@ -82,6 +82,10 @@ class WhatsappLog extends Model
             'verifikasi' => 'Hasil Verifikasi',
             'pengumpulan_tugas' => 'Pengumpulan Tugas (Ke PIC)',
             'konfirmasi_pengumpulan' => 'Konfirmasi Pengumpulan (Ke OPD)',
+            'penugasan_ekop' => 'Penugasan Bidang',
+            'konfirmasi_penugasan' => 'Respon Penugasan',
+            'laporan_penugasan' => 'Laporan Penugasan',
+            'konfirmasi_laporan' => 'Konfirmasi Laporan',
             default => ucfirst(str_replace('_', ' ', $this->tipe_pengingat)),
         };
     }

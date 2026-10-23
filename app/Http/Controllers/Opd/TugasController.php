@@ -9,7 +9,9 @@ use App\Models\WhatsappLog;
 use App\Services\CalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TugasController extends Controller
 {
@@ -89,5 +91,29 @@ class TugasController extends Controller
             'Content-Type' => 'text/calendar; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
         ]);
+    }
+
+    /**
+     * Download the task attachment/template file.
+     */
+    public function downloadFile(Request $request, Tugas $tugas): StreamedResponse
+    {
+        $opd = $request->user()->opd;
+        if (! $opd) {
+            abort(403, 'Akun Anda belum terhubung ke instansi OPD.');
+        }
+
+        $isAssigned = $tugas->tugasOpd()->where('opd_id', $opd->id)->exists();
+        if (! $isAssigned) {
+            abort(403, 'Tugas ini tidak ditugaskan ke OPD Anda.');
+        }
+
+        if (! $tugas->file_path || ! Storage::disk('public')->exists($tugas->file_path)) {
+            abort(404, 'File lampiran tugas tidak ditemukan di penyimpanan server.');
+        }
+
+        $fileName = $tugas->file_original_name ?: basename($tugas->file_path);
+
+        return Storage::disk('public')->download($tugas->file_path, $fileName);
     }
 }

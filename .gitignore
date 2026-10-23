@@ -29,3 +29,5 @@ Thumbs.db
 /whatsapp-bot/auth_session
 /database/*.sqlite
 /database/*.sqlite-journal
+/.archify/
+/storage/framework/server_booted_at

@@ -75,7 +75,7 @@ class LoginLogTest extends TestCase
         $response = $this->actingAs($this->superAdmin)->get(route('admin.login-logs.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Log Sesi Pengguna OPD');
+        $response->assertSee('Audit &amp; Log Sesi Pengguna', false);
         $response->assertSee('Admin Only');
     }
 

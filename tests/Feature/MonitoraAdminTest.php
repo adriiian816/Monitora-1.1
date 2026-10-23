@@ -8,6 +8,8 @@ use App\Models\Tugas;
 use App\Models\TugasOpd;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MonitoraAdminTest extends TestCase
@@ -53,7 +55,7 @@ class MonitoraAdminTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.dashboard'));
 
         $response->assertStatus(200);
-        $response->assertSee('Dashboard BAPPEDA Maluku Utara');
+        $response->assertSee('Dashboard Monitoring');
         $response->assertSee('Total OPD');
     }
 
@@ -290,7 +292,7 @@ class MonitoraAdminTest extends TestCase
         // 1. Check user create view contains no_hp field
         $responseUserCreate = $this->actingAs($this->superAdmin)->get(route('admin.users.create'));
         $responseUserCreate->assertStatus(200);
-        $responseUserCreate->assertSee('Nomor WhatsApp / HP Staf OPD');
+        $responseUserCreate->assertSee('Nomor WhatsApp / HP');
         $responseUserCreate->assertSee('name="no_hp"', false);
 
         // 2. Check opd create view does NOT contain PIC or WhatsApp fields
@@ -302,13 +304,128 @@ class MonitoraAdminTest extends TestCase
         // 3. Check opd index view shows Staf OPD summary
         $responseOpdIndex = $this->actingAs($this->superAdmin)->get(route('admin.opd.index'));
         $responseOpdIndex->assertStatus(200);
-        $responseOpdIndex->assertSee('Staf OPD & Nomor WhatsApp', false);
+        $responseOpdIndex->assertSee('Staf OPD &amp; Kontak WhatsApp', false);
 
         // 4. Check tugas create view shows staff selection options
         $responseTugasCreate = $this->actingAs($this->admin)->get(route('admin.tugas.create'));
         $responseTugasCreate->assertStatus(200);
-        $responseTugasCreate->assertSee('Target Instansi OPD & Staf Penerima Notifikasi', false);
+        $responseTugasCreate->assertSee('Target Instansi OPD &amp; Staf Penerima Notifikasi', false);
         $responseTugasCreate->assertSee('Centang Semua Staf OPD Ini');
         $responseTugasCreate->assertSee('name="staff_ids[]"', false);
+        $responseTugasCreate->assertSee('name="file_tugas"', false);
+    }
+
+    public function test_admin_can_create_task_with_uploaded_document(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->create('format_renja_2027.xlsx', 1500, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $response = $this->actingAs($this->admin)->post(route('admin.tugas.store'), [
+            'judul' => 'Penyusunan Renja dengan Template File',
+            'deskripsi' => 'Silakan download template file lampiran dan isi sesuai format.',
+            'file_tugas' => $file,
+            'format_pengumpulan' => 'digital',
+            'deadline' => now()->addDays(5)->format('Y-m-d H:i:s'),
+            'tahun_anggaran' => '2027',
+            'opd_ids' => [$this->opd->id],
+            'send_wa' => '0',
+        ]);
+
+        $tugas = Tugas::where('judul', 'Penyusunan Renja dengan Template File')->first();
+        $this->assertNotNull($tugas);
+        $this->assertNotNull($tugas->file_path);
+        $this->assertEquals('format_renja_2027.xlsx', $tugas->file_original_name);
+        $this->assertGreaterThan(0, $tugas->file_size);
+
+        Storage::disk('public')->assertExists($tugas->file_path);
+        $response->assertRedirect(route('admin.tugas.show', $tugas));
+    }
+
+    public function test_admin_can_download_task_attachment(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->create('panduan_renja.pdf', 500, 'application/pdf');
+        $path = $file->store('tugas', 'public');
+
+        $tugas = Tugas::create([
+            'admin_id' => $this->admin->id,
+            'judul' => 'Tugas dengan Panduan',
+            'file_path' => $path,
+            'file_original_name' => 'panduan_renja.pdf',
+            'file_size' => 500 * 1024,
+            'format_pengumpulan' => 'digital',
+            'deadline' => now()->addDays(5),
+            'tahun_anggaran' => '2027',
+            'status' => 'aktif',
+        ]);
+
+        TugasOpd::create([
+            'tugas_id' => $tugas->id,
+            'opd_id' => $this->opd->id,
+            'status' => 'belum_dikumpulkan',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.tugas.download', $tugas));
+
+        $response->assertStatus(200);
+        $response->assertDownload('panduan_renja.pdf');
+    }
+
+    public function test_admin_can_update_and_remove_task_attachment(): void
+    {
+        Storage::fake('public');
+        $file = UploadedFile::fake()->create('panduan_lama.pdf', 500, 'application/pdf');
+        $path = $file->store('tugas', 'public');
+
+        $tugas = Tugas::create([
+            'admin_id' => $this->admin->id,
+            'judul' => 'Tugas Edit Berkas',
+            'file_path' => $path,
+            'file_original_name' => 'panduan_lama.pdf',
+            'file_size' => 500 * 1024,
+            'format_pengumpulan' => 'digital',
+            'deadline' => now()->addDays(5),
+            'tahun_anggaran' => '2027',
+            'status' => 'aktif',
+        ]);
+
+        TugasOpd::create([
+            'tugas_id' => $tugas->id,
+            'opd_id' => $this->opd->id,
+            'status' => 'belum_dikumpulkan',
+        ]);
+
+        // 1. Remove attachment
+        $response = $this->actingAs($this->admin)->put(route('admin.tugas.update', $tugas), [
+            'judul' => 'Tugas Edit Berkas (Diupdate)',
+            'format_pengumpulan' => 'digital',
+            'deadline' => now()->addDays(6)->format('Y-m-d H:i:s'),
+            'tahun_anggaran' => '2027',
+            'status' => 'aktif',
+            'opd_ids' => [$this->opd->id],
+            'hapus_file_tugas' => '1',
+        ]);
+
+        $response->assertRedirect(route('admin.tugas.show', $tugas));
+        $tugas->refresh();
+        $this->assertNull($tugas->file_path);
+        Storage::disk('public')->assertMissing($path);
+
+        // 2. Replace attachment
+        $newFile = UploadedFile::fake()->create('panduan_baru.pdf', 600, 'application/pdf');
+        $this->actingAs($this->admin)->put(route('admin.tugas.update', $tugas), [
+            'judul' => 'Tugas Edit Berkas (File Baru)',
+            'format_pengumpulan' => 'digital',
+            'deadline' => now()->addDays(6)->format('Y-m-d H:i:s'),
+            'tahun_anggaran' => '2027',
+            'status' => 'aktif',
+            'opd_ids' => [$this->opd->id],
+            'file_tugas' => $newFile,
+        ]);
+
+        $tugas->refresh();
+        $this->assertNotNull($tugas->file_path);
+        $this->assertEquals('panduan_baru.pdf', $tugas->file_original_name);
+        Storage::disk('public')->assertExists($tugas->file_path);
     }
 }

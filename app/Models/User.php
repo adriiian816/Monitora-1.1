@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'no_hp', 'password', 'role', 'opd_id'])]
+#[Fillable(['name', 'email', 'no_hp', 'password', 'role', 'opd_id', 'bidang'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -37,6 +38,49 @@ class User extends Authenticatable
     public function opd(): BelongsTo
     {
         return $this->belongsTo(Opd::class);
+    }
+
+    /**
+     * Get the OPDs assigned to/handled by this PIC user.
+     */
+    /**
+     * Get the penugasan (internal assignments) received by this Bidang Ekop member.
+     */
+    public function penugasanDiterima(): BelongsToMany
+    {
+        return $this->belongsToMany(Penugasan::class, 'penugasan_penerima', 'user_id', 'penugasan_id')
+            ->using(PenugasanPenerima::class)
+            ->withPivot([
+                'id',
+                'status_penugasan',
+                'status_konfirmasi',
+                'catatan_konfirmasi',
+                'dikonfirmasi_pada',
+                'status_laporan',
+                'file_laporan',
+                'file_laporan_name',
+                'file_laporan_size',
+                'isi_laporan',
+                'link_dokumen',
+                'dilaporkan_pada',
+            ])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the penugasan (internal assignments) created/given by this admin.
+     */
+    public function penugasanDiberi(): HasMany
+    {
+        return $this->hasMany(Penugasan::class, 'pemberi_id');
+    }
+
+    /**
+     * Check if user is a Bidang Ekop member (staf internal Bappeda).
+     */
+    public function isBidangEkop(): bool
+    {
+        return $this->bidang === 'ekop';
     }
 
     /**
@@ -107,6 +151,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is an anggota bidang.
+     */
+    public function isAnggotaBidang(): bool
+    {
+        return $this->role === 'anggota_bidang';
+    }
+
+    /**
      * Check if user is an OPD user.
      */
     public function isOpd(): bool
@@ -120,8 +172,9 @@ class User extends Authenticatable
     public function getRoleLabelAttribute(): string
     {
         return match ($this->role) {
-            'super_admin' => 'Admin',
-            'admin' => 'PIC',
+            'super_admin' => 'Super Admin',
+            'admin' => 'PIC Bappeda',
+            'anggota_bidang' => 'Anggota Bidang',
             'opd' => 'Staf OPD',
             default => ucfirst(str_replace('_', ' ', (string) $this->role)),
         };
@@ -133,10 +186,11 @@ class User extends Authenticatable
     public function getRoleBadgeClassesAttribute(): string
     {
         return match ($this->role) {
-            'super_admin' => 'bg-purple-100 text-purple-800 border-purple-200',
-            'admin' => 'bg-blue-100 text-blue-800 border-blue-200',
-            'opd' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-            default => 'bg-slate-100 text-slate-800 border-slate-200',
+            'super_admin' => 'bg-purple-50 text-purple-700 border-purple-200/90',
+            'admin' => 'bg-teal-50 text-teal-700 border-teal-200/90',
+            'anggota_bidang' => 'bg-indigo-50 text-indigo-700 border-indigo-200/90',
+            'opd' => 'bg-emerald-50 text-emerald-700 border-emerald-200/90',
+            default => 'bg-slate-50 text-slate-700 border-slate-200/90',
         };
     }
 }

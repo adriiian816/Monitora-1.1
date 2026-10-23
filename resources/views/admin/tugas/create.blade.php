@@ -1,22 +1,53 @@
-<x-app-layout>
-    <div class="max-w-4xl mx-auto">
-        <div class="mb-6">
-            <a href="{{ route('admin.tugas.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition mb-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Kembali ke Manajemen Tugas
+<x-app-layout pageTitle="Buat Penugasan Dokumen OPD">
+<main class="flex-1 p-6 md:p-8 overflow-y-auto bg-[#fafcfb]">
+    <div class="max-w-4xl mx-auto flex flex-col gap-6">
+
+        {{-- ===== PAGE HEADER ===== --}}
+        <div>
+            <a href="{{ route('admin.tugas.index') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#059669] transition mb-2">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Kembali ke Manajemen Tugas</span>
             </a>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Buat Penugasan Dokumen OPD Baru</h1>
-            <p class="text-xs text-slate-500 mt-1">Tentukan instruksi, batas deadline pengumpulan, format penyerahan berkas, dan target instansi OPD</p>
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">assignment_add</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-xl font-bold text-[#064e3b] tracking-tight">Buat Penugasan Dokumen OPD</h1>
+                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            T.A. {{ date('Y') }} • Triwulan I
+                        </span>
+                    </div>
+                    <p class="text-[13px] text-slate-500 mt-0.5">Tentukan instruksi, batas deadline pengumpulan, format penyerahan berkas, dan target instansi OPD</p>
+                </div>
+            </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <form method="POST" action="{{ route('admin.tugas.store') }}" class="space-y-6">
+        {{-- ===== VALIDATION ERRORS ===== --}}
+        @if($errors->any())
+            <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs">
+                <div class="flex items-center gap-2 font-bold mb-1">
+                    <span class="material-symbols-outlined text-rose-600 text-[18px]">error</span>
+                    <span>Terdapat kesalahan pada isian formulir:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-0.5 ml-6">
+                    @foreach($errors->all() as $err)
+                        <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- ===== FORM CARD ===== --}}
+        <div class="bg-white rounded-3xl border border-emerald-100/80 shadow-xs p-6 sm:p-8">
+            <form method="POST" action="{{ route('admin.tugas.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
 
                 <!-- Judul & Tahun Anggaran -->
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-5">
                     <div class="sm:col-span-3">
-                        <label for="judul" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                        <label for="judul" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                             Judul Tugas / Nama Laporan <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" 
@@ -24,12 +55,15 @@
                                name="judul" 
                                value="{{ old('judul') }}" 
                                required 
-                               placeholder="Contoh: Penyusunan Rencana Kerja (RENJA) OPD TA 2027" 
-                               class="w-full text-sm font-semibold rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                               placeholder="Contoh: Penyusunan Rencana Kerja (RENJA) OPD TA {{ date('Y') + 1 }}" 
+                               class="w-full text-sm font-semibold rounded-2xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-4 py-3 focus:ring-2 focus:ring-[#059669]/20 transition-all @error('judul') border-rose-500 @enderror">
+                        @error('judul')
+                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <div>
-                        <label for="tahun_anggaran" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                        <label for="tahun_anggaran" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                             Tahun Anggaran <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" 
@@ -38,27 +72,105 @@
                                value="{{ old('tahun_anggaran', date('Y')) }}" 
                                required 
                                placeholder="2026 / 2027" 
-                               class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                               class="w-full text-sm font-semibold rounded-2xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-4 py-3 focus:ring-2 focus:ring-[#059669]/20 transition-all text-center @error('tahun_anggaran') border-rose-500 @enderror">
+                        @error('tahun_anggaran')
+                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
                 <!-- Deskripsi & Petunjuk Teknis -->
                 <div>
-                    <label for="deskripsi" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        Deskripsi & Petunjuk Teknis Pengumpulan
+                    <label for="deskripsi" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Deskripsi &amp; Petunjuk Teknis Pengumpulan
                     </label>
                     <textarea id="deskripsi" 
                               name="deskripsi" 
                               rows="4" 
-                              placeholder="Tuliskan petunjuk rinci berkas yang wajib dilampirkan, ketentuan format laporan, kontak narahubung Bappeda, dsb..." 
-                              class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 leading-relaxed">{{ old('deskripsi') }}</textarea>
+                              placeholder="Tuliskan petunjuk rinci berkas yang wajib dilampirkan, ketentuan format laporan, kontak narahubung Bidang Perekonomian dan Perdagangan, dsb..." 
+                              class="w-full text-sm rounded-2xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-4 py-3 focus:ring-2 focus:ring-[#059669]/20 transition-all leading-relaxed @error('deskripsi') border-rose-500 @enderror">{{ old('deskripsi') }}</textarea>
+                    @error('deskripsi')
+                        <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Upload Berkas Lampiran / Template Tugas -->
+                <div x-data="{
+                    fileName: '',
+                    fileSize: '',
+                    handleFileSelect(e) {
+                        const file = e.target.files[0];
+                        if (file) {
+                            this.fileName = file.name;
+                            const sizeInKb = file.size / 1024;
+                            if (sizeInKb > 1024) {
+                                this.fileSize = (sizeInKb / 1024).toFixed(2) + ' MB';
+                            } else {
+                                this.fileSize = sizeInKb.toFixed(1) + ' KB';
+                            }
+                        } else {
+                            this.fileName = '';
+                            this.fileSize = '';
+                        }
+                    },
+                    clearFile() {
+                        this.fileName = '';
+                        this.fileSize = '';
+                        document.getElementById('file_tugas').value = '';
+                    }
+                }" class="p-5 rounded-2xl bg-[#f8fbf9] border border-emerald-100/90 space-y-3 shadow-2xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <label for="file_tugas" class="block text-xs font-bold text-[#064e3b] uppercase tracking-wider flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[18px] text-[#059669]">attach_file</span>
+                            <span>Upload Lampiran / Template Dokumen Tugas (Opsional)</span>
+                        </label>
+                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full self-start sm:self-auto">
+                            PDF, Excel, Word, PPT, ZIP/RAR (Maks. 25 MB)
+                        </span>
+                    </div>
+
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Sertakan dokumen panduan teknis, formulir template isian (Excel/Word), atau surat penugasan resmi agar staf OPD dapat mengunduhnya secara langsung.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <input type="file" 
+                               id="file_tugas" 
+                               name="file_tugas" 
+                               @change="handleFileSelect($event)"
+                               class="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#059669] file:text-white hover:file:bg-[#047857] cursor-pointer border border-emerald-200 rounded-2xl bg-white p-2 focus:ring-2 focus:ring-[#059669]/20 transition @error('file_tugas') border-rose-500 @enderror">
+                        
+                        <template x-if="fileName">
+                            <button type="button" 
+                                    @click="clearFile()" 
+                                    class="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-700 font-bold px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 shrink-0 transition">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                                <span>Hapus Berkas</span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <template x-if="fileName">
+                        <div class="p-3 rounded-xl bg-white border border-emerald-200 flex items-center justify-between text-xs text-slate-700">
+                            <div class="flex items-center gap-2 truncate">
+                                <span class="material-symbols-outlined text-[#059669] text-[18px]">check_circle</span>
+                                <span class="font-bold text-[#064e3b] truncate" x-text="fileName"></span>
+                                <span class="text-slate-400 font-medium" x-text="'(' + fileSize + ')'"></span>
+                            </div>
+                            <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">Siap Diunggah</span>
+                        </div>
+                    </template>
+
+                    @error('file_tugas')
+                        <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <!-- Batas Waktu Deadline & Format Pengumpulan -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
                     <!-- Deadline -->
                     <div>
-                        <label for="deadline" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                        <label for="deadline" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                             Batas Waktu Deadline (WIT) <span class="text-rose-500">*</span>
                         </label>
                         <input type="datetime-local" 
@@ -66,45 +178,52 @@
                                name="deadline" 
                                value="{{ old('deadline', now()->addDays(7)->setTime(23, 59)->format('Y-m-d\TH:i')) }}" 
                                required 
-                               class="w-full text-sm rounded-xl border border-slate-300 px-3.5 py-2.5 focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
-                        <span class="text-[11px] text-slate-500 mt-1 block">Sistem otomatis mengirimkan pengingat WhatsApp pada H-7, H-3, H-1, dan H-0</span>
+                               class="w-full text-sm font-semibold rounded-2xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-4 py-3 focus:ring-2 focus:ring-[#059669]/20 transition-all @error('deadline') border-rose-500 @enderror">
+                        <span class="text-[11px] text-slate-400 mt-1.5 block">Sistem otomatis mengirimkan pengingat WhatsApp pada H-7, H-3, H-1, dan H-0.</span>
+                        @error('deadline')
+                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <!-- Format Pengumpulan (3 Format Sesuai SKPL) -->
                     <div>
-                        <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                        <span class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                             Format Pengumpulan Dokumen <span class="text-rose-500">*</span>
                         </span>
-                        <div class="space-y-2">
-                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 transition cursor-pointer">
-                                <input type="radio" name="format_pengumpulan" value="digital" {{ old('format_pengumpulan', 'digital') === 'digital' ? 'checked' : '' }} class="mt-0.5 text-blue-700 focus:ring-blue-600">
+                        <div class="space-y-2.5">
+                            <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-[#059669] hover:bg-emerald-50/20 transition cursor-pointer shadow-xs">
+                                <input type="radio" name="format_pengumpulan" value="digital" {{ old('format_pengumpulan', 'digital') === 'digital' ? 'checked' : '' }} class="mt-0.5 text-[#059669] focus:ring-[#059669]">
                                 <div>
-                                    <span class="block text-xs font-bold text-slate-900">1. Digital (Upload Berkas)</span>
-                                    <span class="block text-[11px] text-slate-600">OPD cukup mengunggah file softcopy (PDF, Excel, Word, ZIP).</span>
+                                    <span class="block text-xs font-bold text-slate-900">1. Digital (Upload File)</span>
+                                    <span class="block text-[11px] text-slate-500">OPD cukup mengunggah file softcopy (PDF, Excel, Word, ZIP).</span>
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 transition cursor-pointer">
-                                <input type="radio" name="format_pengumpulan" value="fisik" {{ old('format_pengumpulan') === 'fisik' ? 'checked' : '' }} class="mt-0.5 text-blue-700 focus:ring-blue-600">
+                            <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-[#059669] hover:bg-emerald-50/20 transition cursor-pointer shadow-xs">
+                                <input type="radio" name="format_pengumpulan" value="fisik" {{ old('format_pengumpulan') === 'fisik' ? 'checked' : '' }} class="mt-0.5 text-[#059669] focus:ring-[#059669]">
                                 <div>
                                     <span class="block text-xs font-bold text-slate-900">2. Fisik (Penyerahan Langsung)</span>
-                                    <span class="block text-[11px] text-slate-600">OPD mengonfirmasi penyerahan berkas fisik asli basah ke kantor Bappeda.</span>
+                                    <span class="block text-[11px] text-slate-500">OPD mengonfirmasi penyerahan berkas fisik asli basah ke loket Bidang Perekonomian &amp; Perdagangan.</span>
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 transition cursor-pointer">
-                                <input type="radio" name="format_pengumpulan" value="hybrid" {{ old('format_pengumpulan') === 'hybrid' ? 'checked' : '' }} class="mt-0.5 text-blue-700 focus:ring-blue-600">
+                            <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:border-[#059669] hover:bg-emerald-50/20 transition cursor-pointer shadow-xs">
+                                <input type="radio" name="format_pengumpulan" value="hybrid" {{ old('format_pengumpulan') === 'hybrid' ? 'checked' : '' }} class="mt-0.5 text-[#059669] focus:ring-[#059669]">
                                 <div>
-                                    <span class="block text-xs font-bold text-slate-900">3. Hybrid (Digital & Fisik)</span>
-                                    <span class="block text-[11px] text-slate-600">Kombinasi unggah file softcopy sekaligus konfirmasi fisik berkas basah.</span>
+                                    <span class="block text-xs font-bold text-slate-900">3. Hybrid (Digital &amp; Fisik)</span>
+                                    <span class="block text-[11px] text-slate-500">Kombinasi unggah file softcopy sekaligus konfirmasi fisik berkas basah.</span>
                                 </div>
                             </label>
                         </div>
+                        @error('format_pengumpulan')
+                            <p class="text-xs text-rose-600 mt-1 font-medium">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
                 <!-- Pemilihan Target OPD & Staf Penerima Notifikasi -->
                 <div x-data="{
+                    searchOpd: '',
                     selectAllOpd(checked) {
                         document.querySelectorAll('.opd-checkbox').forEach(el => {
                             el.checked = checked;
@@ -149,71 +268,83 @@
                             if (allToggle) allToggle.checked = true;
                         }
                     }
-                }" class="pt-4 border-t border-slate-100">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                }" class="pt-4 border-t border-slate-100 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                             <span class="block text-xs font-bold text-slate-900 uppercase tracking-wider">
-                                Target Instansi OPD & Staf Penerima Notifikasi <span class="text-rose-500">*</span>
+                                Target Instansi OPD &amp; Staf Penerima Notifikasi <span class="text-rose-500">*</span>
                             </span>
-                            <span class="text-[11px] text-slate-500">Pilih instansi OPD yang ditugaskan serta tentukan staf penerima notifikasi WhatsApp</span>
+                            <span class="text-[11px] text-slate-400">Pilih instansi OPD yang ditugaskan serta tentukan staf penerima notifikasi WhatsApp</span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <button type="button" @click="selectAllOpd(true)" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-semibold transition border border-blue-200">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button type="button" @click="selectAllOpd(true)" class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-[#064e3b] text-xs font-bold transition border border-emerald-200">
                                 Pilih Semua OPD
                             </button>
-                            <button type="button" @click="selectAllOpd(false)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                            <button type="button" @click="selectAllOpd(false)" class="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
                                 Hapus Pilihan
                             </button>
-                            <button type="button" @click="selectAllStaff(true)" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition border border-emerald-200">
+                            <button type="button" @click="selectAllStaff(true)" class="px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold transition border border-teal-200">
                                 Centang Semua Staf
                             </button>
                         </div>
                     </div>
 
-                    <div class="space-y-3 max-h-96 overflow-y-auto p-3 rounded-xl border border-slate-200 bg-slate-50/50">
+                    <!-- Search Box OPD -->
+                    <div class="relative flex items-center bg-[#f0f5f2] px-3.5 py-1.5 rounded-full border border-emerald-100/60 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#059669]/20 transition-all">
+                        <span class="material-symbols-outlined text-slate-400 text-[18px] mr-2">search</span>
+                        <input type="text" 
+                               x-model="searchOpd" 
+                               placeholder="Cari kode atau nama instansi OPD..." 
+                               class="w-full bg-transparent p-0 text-slate-800 placeholder:text-slate-400 text-xs focus:outline-none focus:ring-0">
+                    </div>
+
+                    <!-- OPD & Staff List Container -->
+                    <div class="space-y-3 max-h-96 overflow-y-auto p-3.5 rounded-2xl border border-emerald-100/80 bg-[#fafcfb]">
                         @foreach($opds as $opd)
                             @php
                                 $isOpdChecked = in_array($opd->id, old('opd_ids', $opds->pluck('id')->toArray()));
                                 $staffCount = $opd->users->count();
+                                $opdSearchContent = strtolower($opd->kode_opd . ' ' . $opd->nama_opd);
                             @endphp
-                            <div class="p-3 rounded-xl bg-white border border-slate-200 hover:border-blue-300 transition shadow-xs">
+                            <div x-show="!searchOpd || '{{ addslashes($opdSearchContent) }}'.includes(searchOpd.toLowerCase())"
+                                 class="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-[#059669]/50 transition shadow-xs">
                                 <div class="flex items-start justify-between gap-3">
-                                    <label class="flex items-start gap-2.5 cursor-pointer flex-1">
+                                    <label class="flex items-start gap-3 cursor-pointer flex-1">
                                         <input type="checkbox" 
                                                id="opd_checkbox_{{ $opd->id }}"
                                                name="opd_ids[]" 
                                                value="{{ $opd->id }}" 
                                                {{ $isOpdChecked ? 'checked' : '' }}
                                                @change="onOpdChange({{ $opd->id }}, $event.target.checked)"
-                                               class="opd-checkbox mt-0.5 text-blue-700 rounded border-slate-300 focus:ring-blue-500">
+                                               class="opd-checkbox mt-0.5 text-[#059669] rounded border-slate-300 focus:ring-[#059669]">
                                         <div class="text-xs">
-                                            <span class="font-bold text-blue-900 font-mono text-[11px]">{{ $opd->kode_opd }}</span>
+                                            <span class="font-bold text-[#064e3b] font-mono text-[11px] px-2 py-0.5 rounded bg-[#f0f5f2] border border-emerald-200">{{ $opd->kode_opd }}</span>
                                             <span class="font-bold text-slate-800 ml-1.5">{{ $opd->nama_opd }}</span>
                                         </div>
                                     </label>
 
                                     @if($staffCount > 0)
-                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                                            <span class="material-symbols-outlined text-[14px] text-slate-500">group</span>
                                             {{ $staffCount }} Staf
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center text-[10px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                                        <span class="inline-flex items-center text-[10px] font-medium text-slate-400 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-100">
                                             Belum ada staf
                                         </span>
                                     @endif
                                 </div>
 
                                 @if($staffCount > 0)
-                                    <div class="mt-2.5 pt-2.5 border-t border-slate-100 pl-6 space-y-2">
-                                        <!-- Opsi 1: Centang Semua Staf pada OPD Tersebut -->
+                                    <div class="mt-3 pt-3 border-t border-slate-100 pl-6 space-y-2">
+                                        <!-- Toggle All Staff per OPD -->
                                         <div class="flex items-center justify-between pb-1.5 border-b border-dashed border-slate-200">
                                             <label class="flex items-center gap-2 cursor-pointer">
                                                 <input type="checkbox"
                                                        id="toggle_all_staff_{{ $opd->id }}"
                                                        {{ $isOpdChecked ? 'checked' : '' }}
                                                        @change="toggleAllStaffForOpd({{ $opd->id }}, $event.target.checked)"
-                                                       class="all-staff-toggle all-staff-toggle-{{ $opd->id }} text-blue-600 rounded border-slate-300 focus:ring-blue-500 text-xs">
+                                                       class="all-staff-toggle all-staff-toggle-{{ $opd->id }} text-[#059669] rounded border-slate-300 focus:ring-[#059669] text-xs">
                                                 <span class="text-[11px] font-bold text-slate-700">
                                                     Centang Semua Staf OPD Ini ({{ $staffCount }} orang)
                                                 </span>
@@ -221,7 +352,7 @@
                                             <span class="text-[10px] text-slate-400">Atau pilih staf tertentu:</span>
                                         </div>
 
-                                        <!-- Opsi 2: Pilihan Spesifik per Staf -->
+                                        <!-- Pilihan Spesifik per Staf -->
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                                             @foreach($opd->users as $staff)
                                                 @php
@@ -229,18 +360,18 @@
                                                         ? in_array($staff->id, old('staff_ids', []))
                                                         : $isOpdChecked;
                                                 @endphp
-                                                <label class="flex items-start gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50/60 hover:bg-blue-50/40 hover:border-blue-200 transition cursor-pointer">
+                                                <label class="flex items-start gap-2 p-2 rounded-xl border border-slate-100 bg-[#fafcfb] hover:bg-emerald-50/30 hover:border-emerald-200 transition cursor-pointer">
                                                     <input type="checkbox"
                                                            name="staff_ids[]"
                                                            value="{{ $staff->id }}"
                                                            {{ $isStaffChecked ? 'checked' : '' }}
                                                            @change="onStaffChange({{ $opd->id }})"
-                                                           class="staff-checkbox staff-opd-{{ $opd->id }} mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                                                           class="staff-checkbox staff-opd-{{ $opd->id }} mt-0.5 text-[#059669] rounded border-slate-300 focus:ring-[#059669]">
                                                     <div class="text-[11px] leading-tight min-w-0 flex-1">
                                                         <span class="font-semibold text-slate-800 block truncate">{{ $staff->name }}</span>
                                                         @if($staff->no_hp)
-                                                            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-mono mt-0.5 font-medium">
-                                                                <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+                                                            <span class="inline-flex items-center gap-1 text-[10px] text-[#059669] font-mono mt-0.5 font-medium">
+                                                                <span class="material-symbols-outlined text-[12px]">chat</span>
                                                                 {{ $staff->no_hp }}
                                                             </span>
                                                         @else
@@ -255,7 +386,7 @@
                                     </div>
                                 @else
                                     <div class="mt-2 pl-6 text-[11px] text-slate-400 italic">
-                                        Belum ada staf terdaftar pada OPD ini. Tambahkan staf di menu <a href="{{ route('admin.users.create') }}" class="text-blue-600 hover:underline">Kelola Pengguna</a>.
+                                        Belum ada staf terdaftar pada OPD ini. Tambahkan staf di menu <a href="{{ route('admin.users.create') }}" class="text-[#059669] hover:underline font-semibold">Kelola Pengguna</a>.
                                     </div>
                                 @endif
                             </div>
@@ -264,33 +395,35 @@
                 </div>
 
                 <!-- Notifikasi WhatsApp Otomatis -->
-                <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-3">
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3 shadow-xs">
                     <input type="checkbox" 
                            id="send_wa" 
                            name="send_wa" 
                            value="1" 
                            {{ old('send_wa', 1) ? 'checked' : '' }}
-                           class="mt-1 text-blue-700 rounded border-blue-300 focus:ring-blue-500">
+                           class="mt-1 text-[#059669] rounded border-slate-300 focus:ring-[#059669]">
                     <div>
-                        <label for="send_wa" class="text-xs font-bold text-blue-950 block cursor-pointer">
+                        <label for="send_wa" class="text-xs font-bold text-[#064e3b] block cursor-pointer">
                             Kirim Notifikasi Tugas Baru Otomatis via WhatsApp Sekarang
                         </label>
-                        <p class="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
-                            Sistem akan secara instan mencatat dan mengirimkan pesan notifikasi penugasan baru kepada seluruh nomor WhatsApp Staf OPD yang dipilih di atas (nomor telepon dikelola di Kelola Pengguna).
+                        <p class="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                            Sistem akan secara instan mencatat dan mengirimkan pesan instruksi tugas baru kepada seluruh nomor WhatsApp Staf OPD yang dipilih di atas via WhatsApp Gateway.
                         </p>
                     </div>
                 </div>
 
                 <!-- Form Actions -->
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <a href="{{ route('admin.tugas.index') }}" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm hover:bg-slate-200 transition">
+                <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+                    <a href="{{ route('admin.tugas.index') }}" class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition">
                         Batal
                     </a>
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-sm transition">
-                        Terbitkan & Distribusikan Tugas
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99]">
+                        <span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                        <span>Terbitkan &amp; Distribusikan Tugas</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+</main>
 </x-app-layout>

@@ -1,74 +1,319 @@
-<x-app-layout>
-    <div x-data="{ showDeleteModal: false, deleteActionUrl: '', opdName: '' }">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-                <h1 class="text-2xl font-black text-slate-900 tracking-tight">Master Data OPD</h1>
-                <p class="text-xs text-slate-500 mt-1">Kelola daftar Organisasi Perangkat Daerah beserta nomor WhatsApp PIC penerima notifikasi</p>
+<x-app-layout pageTitle="Data OPD">
+    @php
+        $availableOpdIds = $opds->pluck('id')->values();
+    @endphp
+
+<main class="flex-1 p-6 md:p-8 overflow-y-auto bg-[#fafcfb]"
+      x-data="{ 
+        selectedOpds: [], 
+        availableOpdIds: {{ json_encode($availableOpdIds) }},
+        showDeleteModal: false, 
+        showEditModal: false,
+        opdToEditId: '',
+
+        selectAll() {
+            this.selectedOpds = [...this.availableOpdIds];
+        },
+
+        deselectAll() {
+            this.selectedOpds = [];
+        },
+
+        toggleSelectAll(e) {
+            if (e.target.checked) {
+                this.selectAll();
+            } else {
+                this.deselectAll();
+            }
+        },
+
+        isAllSelected() {
+            return this.availableOpdIds.length > 0 && this.availableOpdIds.every(id => this.selectedOpds.map(Number).includes(Number(id)));
+        },
+
+        handleEdit() {
+            if (this.selectedOpds.length === 1) {
+                window.location.href = '/admin/opd/' + this.selectedOpds[0] + '/edit';
+            } else {
+                if (this.selectedOpds.length > 1) {
+                    this.opdToEditId = this.selectedOpds[0];
+                } else if (this.availableOpdIds.length > 0) {
+                    this.opdToEditId = this.availableOpdIds[0];
+                }
+                this.showEditModal = true;
+            }
+        },
+
+        proceedEdit() {
+            if (!this.opdToEditId) {
+                alert('Silakan pilih data OPD yang ingin diedit.');
+                return;
+            }
+            window.location.href = '/admin/opd/' + this.opdToEditId + '/edit';
+        },
+
+        handleDelete() {
+            this.showDeleteModal = true;
+        }
+    }">
+    <div class="flex flex-col w-full max-w-7xl mx-auto gap-6">
+
+        {{-- ===== PAGE HEADER ===== --}}
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">domain</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-xl font-bold text-[#064e3b] tracking-tight">Master Data Instansi OPD</h1>
+                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            Pemerintah Provinsi Maluku Utara
+                        </span>
+                    </div>
+                    <p class="text-[13px] text-slate-500 mt-0.5">Kelola direktori Organisasi Perangkat Daerah, pemetaan akun staf &amp; PIC, serta rekapitulasi tugas</p>
+                </div>
             </div>
-            <a href="{{ route('admin.opd.create') }}" 
-               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-sm transition shrink-0">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                Tambah OPD Baru
-            </a>
+            
+            {{-- Header Action Buttons --}}
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Tombol Edit Data -->
+                <button type="button" 
+                        @click="handleEdit()" 
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-xs transition cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px] text-slate-600">edit</span>
+                    <span>Edit Data</span>
+                    <span x-show="selectedOpds.length > 0" 
+                          x-text="'(' + selectedOpds.length + ')'" 
+                          class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-[#064e3b] font-extrabold"></span>
+                </button>
+
+                <!-- Tombol Hapus Data -->
+                <button type="button" 
+                        @click="handleDelete()" 
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 shadow-xs transition cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px] text-rose-600">delete</span>
+                    <span>Hapus Data</span>
+                    <span x-show="selectedOpds.length > 0" 
+                          x-text="'(' + selectedOpds.length + ')'" 
+                          class="px-2 py-0.5 rounded-full text-[10px] bg-rose-200 text-rose-800 font-extrabold"></span>
+                </button>
+
+                <!-- Tambah OPD Baru -->
+                <a href="{{ route('admin.opd.create') }}" 
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    <span>+ Tambah OPD Baru</span>
+                </a>
+            </div>
         </div>
 
-        <!-- Search & Filter Card -->
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6">
-            <form method="GET" action="{{ route('admin.opd.index') }}" class="flex flex-col sm:flex-row gap-3">
-                <div class="flex-1 relative">
-                    <input type="text" 
-                           name="search" 
-                           value="{{ request('search') }}" 
-                           placeholder="Cari nama instansi OPD atau kode (mis: DISPERINDAG)..." 
-                           class="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600">
-                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        {{-- ===== ALERT NOTIFICATIONS ===== --}}
+        @if(session('success'))
+            <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl px-5 py-3.5 text-xs font-semibold shadow-xs">
+                <span class="material-symbols-outlined text-emerald-600 text-[20px] shrink-0">check_circle</span>
+                <div class="mt-0.5">{{ session('success') }}</div>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="flex items-start gap-3 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl px-5 py-3.5 text-xs font-semibold shadow-xs">
+                <span class="material-symbols-outlined text-rose-600 text-[20px] shrink-0">error</span>
+                <div class="mt-0.5">{{ session('error') }}</div>
+            </div>
+        @endif
+
+        {{-- ===== SUMMARY KPI CARDS ===== --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {{-- Card 1: Total Instansi --}}
+            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">corporate_fare</span>
                 </div>
-                <button type="submit" class="px-5 py-2 rounded-xl bg-blue-900 text-white font-semibold text-sm hover:bg-blue-800 transition">
-                    Filter Data
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Instansi</div>
+                    <div class="text-2xl font-black text-slate-900 leading-tight">{{ $totalOpds }}</div>
+                    <div class="text-[10px] text-slate-400 font-medium">Semua OPD terdaftar</div>
+                </div>
+            </div>
+
+            {{-- Card 2: OPD Aktif --}}
+            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">verified</span>
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">OPD Aktif</div>
+                    <div class="text-2xl font-black text-emerald-700 leading-tight">{{ $totalActiveOpds }}</div>
+                    <div class="text-[10px] text-[#059669] font-semibold">Operasional aktif</div>
+                </div>
+            </div>
+
+            {{-- Card 3: Staf OPD --}}
+            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200 flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">group</span>
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Akun Staf OPD</div>
+                    <div class="text-2xl font-black text-teal-700 leading-tight">{{ $totalStaff }}</div>
+                    <div class="text-[10px] text-teal-700 font-semibold">Pengunggah berkas</div>
+                </div>
+            </div>
+
+            {{-- Card 4: Total Tugas Masuk --}}
+            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">folder_special</span>
+                </div>
+                <div>
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tugas OPD</div>
+                    <div class="text-2xl font-black text-amber-700 leading-tight">{{ $totalTugas }}</div>
+                    <div class="text-[10px] text-amber-700 font-semibold">Distribusi penugasan</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ===== FILTER & SEARCH BAR ===== --}}
+        <form method="GET" action="{{ route('admin.opd.index') }}"
+              class="bg-white p-2 shadow-xs border border-emerald-100/80 flex flex-col sm:flex-row items-stretch gap-2.5 rounded-full">
+            
+            {{-- Search Input --}}
+            <div class="relative flex-1 flex items-center bg-[#f0f5f2] px-3.5 py-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#059669]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined text-slate-400 text-[20px] mr-2.5">search</span>
+                <input class="w-full bg-transparent p-0 text-slate-800 placeholder:text-slate-400 text-[13px] focus:outline-none focus:ring-0"
+                       name="search"
+                       value="{{ request('search') }}"
+                       placeholder="Cari nama instansi OPD atau kode (mis: DISPERINDAG, DISTAN, DKP)..."
+                       type="text">
+            </div>
+
+            {{-- Filter & Reset Buttons --}}
+            <div class="flex gap-2">
+                <button type="submit" class="px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-xs flex items-center justify-center gap-2 transition-colors rounded-full">
+                    <span class="material-symbols-outlined text-[18px]">tune</span>
+                    <span>Filter Data</span>
                 </button>
                 @if(request('search'))
-                    <a href="{{ route('admin.opd.index') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200 transition text-center">
-                        Reset
+                    <a href="{{ route('admin.opd.index') }}" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium flex items-center gap-1.5 transition-colors rounded-full">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                        <span>Reset</span>
                     </a>
                 @endif
-            </form>
+            </div>
+        </form>
+
+        {{-- Banner Pemilihan Aktif (Muncul otomatis saat data dipilih) --}}
+        <div x-show="selectedOpds.length > 0" 
+             x-transition 
+             class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-2.5 text-xs text-[#064e3b] font-bold">
+                <span class="flex h-2.5 w-2.5 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#059669]"></span>
+                </span>
+                <span x-text="selectedOpds.length + ' data instansi OPD dipilih (dari ' + availableOpdIds.length + ' data di halaman ini)'"></span>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" 
+                        @click="handleEdit()" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-emerald-200 hover:bg-emerald-50 text-[#064e3b] text-xs font-bold transition shadow-xs cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px] text-[#059669]">edit</span>
+                    <span>Edit Data Terpilih</span>
+                </button>
+                <button type="button" 
+                        @click="handleDelete()" 
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-xs cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                    <span>Hapus Data Terpilih</span>
+                </button>
+                <button type="button" 
+                        @click="selectedOpds = []" 
+                        class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">
+                    Batal Pilih
+                </button>
+            </div>
         </div>
 
-        <!-- Table Card -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        {{-- Status Info Bar --}}
+        <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2 text-slate-500 text-[12px]">
+                <span>Menampilkan <strong class="text-[#064e3b] font-bold text-[13px]">{{ $opds->total() }}</strong> instansi OPD</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span class="text-[#059669] font-bold">Sinkronisasi Database Aktif</span>
+            </div>
+            <div class="flex items-center gap-3 text-[12px] text-slate-500">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Aktif</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-400"></span> Nonaktif</span>
+            </div>
+        </div>
+
+        {{-- ===== TABEL MASTER DATA OPD ===== --}}
+        <div class="bg-white rounded-3xl border border-emerald-100/80 shadow-xs overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
-                    <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-700">
+                    <thead class="bg-[#f7faf8] border-b border-emerald-100/70 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                         <tr>
-                            <th scope="col" class="px-6 py-4">Kode & Nama Instansi OPD</th>
-                            <th scope="col" class="px-6 py-4">Staf OPD & Nomor WhatsApp</th>
-                            <th scope="col" class="px-6 py-4 text-center">Statistik Tugas</th>
-                            <th scope="col" class="px-6 py-4 text-center">Status</th>
-                            <th scope="col" class="px-6 py-4 text-right">Aksi</th>
+                            <!-- Checkbox Pilih Semua -->
+                            <th scope="col" class="w-12 px-4 py-4 text-center whitespace-nowrap">
+                                <input type="checkbox" 
+                                       @change="toggleSelectAll($event)" 
+                                       :checked="isAllSelected()"
+                                       class="rounded border-slate-300 text-[#059669] focus:ring-[#059669] cursor-pointer"
+                                       title="Pilih Semua Data OPD">
+                            </th>
+                            <th scope="col" class="px-6 py-4 whitespace-nowrap">Kode &amp; Nama Instansi OPD</th>
+                            <th scope="col" class="px-6 py-4 whitespace-nowrap">Staf OPD &amp; Kontak WhatsApp</th>
+                            <th scope="col" class="px-6 py-4 whitespace-nowrap text-center">Statistik Tugas</th>
+                            <th scope="col" class="px-6 py-4 whitespace-nowrap text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($opds as $opd)
-                            <tr class="hover:bg-slate-50/60 transition">
-                                <!-- OPD info -->
+                            <tr class="hover:bg-[#f0f8f4] transition-colors group"
+                                :class="selectedOpds.map(Number).includes({{ $opd->id }}) ? 'bg-emerald-50/40' : ''">
+                                
+                                <!-- Checkbox Baris -->
+                                <td class="w-12 px-4 py-4 text-center whitespace-nowrap">
+                                    <input type="checkbox" 
+                                           :value="{{ $opd->id }}" 
+                                           x-model="selectedOpds" 
+                                           class="rounded border-slate-300 text-[#059669] focus:ring-[#059669] cursor-pointer">
+                                </td>
+
+                                <!-- OPD Info -->
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-slate-900 flex items-center gap-2">
-                                        <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-mono text-xs border border-blue-100 font-bold">
-                                            {{ $opd->kode_opd }}
-                                        </span>
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#064e3b] font-black text-xs flex items-center justify-center shrink-0 border border-emerald-200 shadow-xs mt-0.5">
+                                            {{ substr($opd->kode_opd, 0, 3) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="px-2.5 py-0.5 rounded-full bg-[#f0f5f2] text-[#064e3b] font-mono text-[11px] border border-emerald-200 font-bold">
+                                                    {{ $opd->kode_opd }}
+                                                </span>
+                                                <a href="{{ route('admin.opd.edit', $opd) }}" 
+                                                   class="font-bold text-slate-800 text-sm group-hover:text-[#059669] hover:underline transition" 
+                                                   title="Klik untuk mengedit data OPD ini">
+                                                    {{ $opd->nama_opd }}
+                                                </a>
+                                            </div>
+                                            @if($opd->alamat)
+                                                <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-1 truncate max-w-md" title="{{ $opd->alamat }}">
+                                                    <span class="material-symbols-outlined text-[14px] text-slate-400 shrink-0">location_on</span>
+                                                    <span>{{ $opd->alamat }}</span>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div class="text-xs text-slate-800 font-semibold mt-1">{{ $opd->nama_opd }}</div>
-                                    @if($opd->alamat)
-                                        <div class="text-[11px] text-slate-500 mt-0.5">{{ Str::limit($opd->alamat, 55) }}</div>
-                                    @endif
                                 </td>
 
                                 <!-- Staf OPD & Kontak WA -->
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     @if($opd->users->count() > 0)
                                         <div class="space-y-1.5">
                                             @foreach($opd->users->take(2) as $staff)
-                                                <div class="text-xs flex items-center gap-1.5 flex-wrap">
+                                                <div class="text-xs flex items-center gap-2 flex-wrap">
                                                     <span class="font-semibold text-slate-900">{{ $staff->name }}</span>
                                                     @if($staff->no_hp)
                                                         @php
@@ -79,9 +324,10 @@
                                                         @endphp
                                                         <a href="https://wa.me/{{ $cleanPhone }}" 
                                                            target="_blank" 
-                                                           class="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100">
-                                                            <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                                                            {{ $staff->no_hp }}
+                                                           class="inline-flex items-center gap-1 text-[11px] font-mono text-[#059669] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 hover:bg-emerald-100 transition shadow-2xs" 
+                                                           title="Hubungi staf via WhatsApp">
+                                                            <span class="material-symbols-outlined text-[12px]">chat</span>
+                                                            <span>{{ $staff->no_hp }}</span>
                                                         </a>
                                                     @else
                                                         <span class="text-[10px] text-slate-400 italic">tanpa WA</span>
@@ -89,60 +335,57 @@
                                                 </div>
                                             @endforeach
                                             @if($opd->users->count() > 2)
-                                                <span class="text-[10px] text-blue-700 font-bold block">+{{ $opd->users->count() - 2 }} staf lainnya</span>
+                                                <span class="text-[10px] text-[#059669] font-bold block">+{{ $opd->users->count() - 2 }} staf lainnya</span>
                                             @endif
                                         </div>
                                     @else
-                                        <span class="text-[11px] text-amber-700 font-medium italic">Belum ada akun staf</span>
+                                        <span class="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 italic">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                            Belum ada akun staf
+                                        </span>
                                     @endif
                                 </td>
 
-                                <!-- Stats -->
-                                <td class="px-6 py-4 text-center">
-                                    <div class="inline-flex items-center gap-2 text-xs font-semibold">
-                                        <span class="text-slate-700" title="Total Tugas">{{ $opd->total_tugas }} tugas</span>
-                                        <span class="text-blue-700 font-bold" title="Selesai">({{ $opd->total_selesai }} selesai)</span>
+                                <!-- Statistik Tugas -->
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <div class="inline-flex items-center gap-1.5 flex-nowrap">
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#f0f5f2] text-slate-700" title="Total Tugas Ditugaskan">
+                                            {{ $opd->total_tugas }} tugas
+                                        </span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#059669] border border-emerald-200" title="Tugas Selesai / Diterima">
+                                            {{ $opd->total_selesai }} selesai
+                                        </span>
                                         @if($opd->total_terlambat > 0)
-                                            <span class="text-rose-600 font-bold" title="Terlambat">• {{ $opd->total_terlambat }} telat</span>
+                                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200" title="Tugas Terlambat">
+                                                • {{ $opd->total_terlambat }} telat
+                                            </span>
                                         @endif
                                     </div>
                                 </td>
 
                                 <!-- Status -->
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @if($opd->is_active)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-200">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>
                                             Aktif
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             Nonaktif
                                         </span>
                                     @endif
                                 </td>
-
-                                <!-- Actions -->
-                                <td class="px-6 py-4 text-right">
-                                    <div class="inline-flex items-center gap-2">
-                                        <a href="{{ route('admin.opd.edit', $opd) }}" 
-                                           class="p-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition" 
-                                           title="Edit Data OPD">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                        </a>
-
-                                        <button type="button" 
-                                                @click="deleteActionUrl = '{{ route('admin.opd.destroy', $opd) }}'; opdName = '{{ addslashes($opd->nama_opd) }}'; if ($refs.deleteModalForm) { $refs.deleteModalForm.action = '{{ route('admin.opd.destroy', $opd) }}'; } showDeleteModal = true;"
-                                                class="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition" 
-                                                title="Hapus Data OPD">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </div>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                                    Tidak ada data OPD yang sesuai pencarian.
+                                <td colspan="5" class="px-6 py-12 text-center text-slate-400">
+                                    <div class="w-12 h-12 mx-auto rounded-2xl bg-[#f0f5f2] text-slate-400 flex items-center justify-center mb-3">
+                                        <span class="material-symbols-outlined text-[26px]">domain_disabled</span>
+                                    </div>
+                                    <p class="font-bold text-slate-700 text-sm">Tidak ada data instansi OPD yang sesuai pencarian.</p>
+                                    <p class="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian Anda.</p>
                                 </td>
                             </tr>
                         @endforelse
@@ -151,53 +394,129 @@
             </div>
 
             @if($opds->hasPages())
-                <div class="p-4 border-t border-slate-200">
+                <div class="p-4 border-t border-slate-100">
                     {{ $opds->links() }}
                 </div>
             @endif
         </div>
 
-        <!-- Modal Konfirmasi Hapus OPD -->
+        {{-- ===== MODAL 1: Konfirmasi Hapus Data OPD ===== --}}
         <div x-show="showDeleteModal" 
-             x-cloak
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
-            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative text-left"
-                 @click.away="showDeleteModal = false">
-                <div class="flex items-center gap-3.5 mb-4">
-                    <div class="w-11 h-11 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+             style="display: none;" 
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div @click.away="showDeleteModal = false" 
+                 class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
+                <div class="flex items-center gap-3 text-rose-600 mb-4">
+                    <div class="p-3 bg-rose-100 rounded-2xl">
+                        <span class="material-symbols-outlined text-rose-600 text-[26px]">warning</span>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">Konfirmasi Hapus OPD</h3>
-                        <p class="text-xs text-slate-500">Data OPD dan riwayat terkait akan dihapus permanen</p>
+                        <h3 class="text-lg font-bold text-slate-900">Konfirmasi Hapus Data OPD</h3>
+                        <p class="text-xs text-slate-500">Tindakan ini menghapus data instansi &amp; akun terkait</p>
                     </div>
                 </div>
 
-                <p class="text-sm text-slate-700 leading-relaxed mb-6">
-                    Apakah Anda yakin ingin menghapus data instansi OPD berikut: <br>
-                    <strong class="text-slate-900 font-bold block mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200" x-text="opdName"></strong>
-                </p>
+                {{-- Jika ada data yang dipilih --}}
+                <template x-if="selectedOpds.length > 0">
+                    <div>
+                        <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                            Apakah Anda yakin ingin menghapus <strong class="text-rose-700 font-black" x-text="selectedOpds.length + ' data instansi OPD'"></strong> yang dipilih? Seluruh akun staf dan data berkas penugasan terkait juga akan terhapus.
+                        </p>
+                        <div class="mb-4 flex items-center justify-between text-xs">
+                            <span class="text-slate-500">Ingin hapus seluruh instansi?</span>
+                            <button type="button" 
+                                    @click="selectAll()" 
+                                    x-show="!isAllSelected()" 
+                                    class="text-[#059669] hover:underline font-bold cursor-pointer">
+                                Pilih Seluruh Data ({{ count($availableOpdIds) }} OPD)
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
-                <form x-ref="deleteModalForm" method="POST" :action="deleteActionUrl" class="flex items-center justify-end gap-3">
+                {{-- Jika belum ada data yang dipilih --}}
+                <template x-if="selectedOpds.length === 0">
+                    <div class="mb-6">
+                        <p class="text-sm text-slate-600 mb-3 leading-relaxed">
+                            Belum ada instansi yang dicentang. Anda dapat memilih untuk <strong class="text-rose-700 font-bold">menghapus seluruh data instansi OPD</strong> di halaman ini ({{ count($availableOpdIds) }} OPD) sekaligus, atau menutup jendela ini untuk memilih secara manual.
+                        </p>
+                        <button type="button" 
+                                @click="selectAll()" 
+                                class="w-full py-2.5 px-4 rounded-full bg-[#f0f5f2] hover:bg-[#e6efe9] text-slate-800 text-xs font-bold transition flex items-center justify-center gap-2 border border-emerald-200 cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px] text-[#059669]">check_circle</span>
+                            <span>Centang Seluruh Data OPD ({{ count($availableOpdIds) }} OPD)</span>
+                        </button>
+                    </div>
+                </template>
+
+                <form method="POST" action="{{ route('admin.opd.bulk-delete') }}" class="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
                     @csrf
-                    @method('DELETE')
+                    <!-- Hidden inputs of selected OPD IDs -->
+                    <template x-for="opdId in selectedOpds" :key="opdId">
+                        <input type="hidden" name="opd_ids[]" :value="opdId">
+                    </template>
+
                     <button type="button" 
-                            @click="showDeleteModal = false"
-                            class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition">
+                            @click="showDeleteModal = false" 
+                            class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
                         Batal
                     </button>
                     <button type="submit" 
-                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition">
-                        Ya, Hapus
+                            :disabled="selectedOpds.length === 0"
+                            :class="selectedOpds.length === 0 ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-rose-600 hover:bg-rose-700 cursor-pointer'"
+                            class="px-6 py-2.5 rounded-full text-white font-bold text-xs shadow-sm transition">
+                        Ya, Hapus Data
                     </button>
                 </form>
             </div>
         </div>
+
+        {{-- ===== MODAL 2: Pilih OPD untuk Diedit ===== --}}
+        <div x-show="showEditModal" 
+             style="display: none;" 
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div @click.away="showEditModal = false" 
+                 class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
+                <div class="flex items-center gap-3 text-[#064e3b] mb-4">
+                    <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
+                        <span class="material-symbols-outlined text-[#059669] text-[26px]">edit_document</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Pilih OPD yang Ingin Diedit</h3>
+                        <p class="text-xs text-slate-500">Pilih satu instansi OPD untuk membuka formulir edit</p>
+                    </div>
+                </div>
+
+                <div class="mb-6 space-y-2">
+                    <label for="edit_opd_select" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Daftar Instansi OPD
+                    </label>
+                    <select id="edit_opd_select" 
+                            x-model="opdToEditId" 
+                            class="w-full text-sm rounded-2xl border border-slate-200 bg-[#f0f5f2] p-3 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/20 font-medium">
+                        <option value="">-- Pilih Instansi OPD --</option>
+                        @foreach($opds as $opdItem)
+                            <option value="{{ $opdItem->id }}">
+                                [{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" 
+                            @click="showEditModal = false" 
+                            class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" 
+                            @click="proceedEdit()" 
+                            class="px-6 py-2.5 rounded-full bg-[#059669] text-white font-bold text-xs hover:bg-[#047857] shadow-sm transition cursor-pointer">
+                        Buka Formulir Edit
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+</main>
 </x-app-layout>

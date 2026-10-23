@@ -56,13 +56,13 @@ class MonitoraRoleHierarchyTest extends TestCase
         // 1. Dashboard
         $response = $this->actingAs($this->superAdmin)->get(route('admin.dashboard'));
         $response->assertStatus(200);
-        $response->assertSee('Dashboard BAPPEDA Maluku Utara');
+        $response->assertSee('Dashboard Monitoring');
         $response->assertSee('Kelola Pengguna');
 
         // 2. OPD Master Management
         $response = $this->actingAs($this->superAdmin)->get(route('admin.opd.index'));
         $response->assertStatus(200);
-        $response->assertSee('Master Data OPD');
+        $response->assertSee('Master Data Instansi OPD');
 
         // 3. User Management
         $response = $this->actingAs($this->superAdmin)->get(route('admin.users.index'));
@@ -244,14 +244,15 @@ class MonitoraRoleHierarchyTest extends TestCase
         ]);
     }
 
-    public function test_one_click_super_admin_button_is_visible_and_logs_in_instantly(): void
+    public function test_quick_login_buttons_are_removed_and_super_admin_can_login(): void
     {
-        // 1. Verify button is present on login page
+        // 1. Verify 1-click demo buttons are no longer present on login page
         $loginPage = $this->get(route('login'));
         $loginPage->assertStatus(200);
-        $loginPage->assertSee('⚡ Admin');
+        $loginPage->assertDontSee('Pilihan Akun Uji Coba Cepat');
+        $loginPage->assertDontSee('superadmin@bappeda.malutprov.go.id');
 
-        // 2. Perform 1-click login post
+        // 2. Perform normal login post
         $loginPost = $this->post(route('login'), [
             'email' => 'superadmin@bappeda.malutprov.go.id',
             'password' => 'password',

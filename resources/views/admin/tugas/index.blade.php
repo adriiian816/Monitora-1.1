@@ -1,164 +1,249 @@
-<x-app-layout>
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Manajemen Penugasan Dokumen OPD</h1>
-            <p class="text-xs text-slate-500 mt-1">Buat instruksi tugas, pilih format pengumpulan, dan pantau respons OPD secara terpusat</p>
-        </div>
-        <a href="{{ route('admin.tugas.create') }}" 
-           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm shadow-sm transition shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-            Buat Tugas Baru
-        </a>
-    </div>
+<x-app-layout pageTitle="Penugasan OPD">
+<style>
+    .bg-striped-progress {
+        background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
+        background-size: 1rem 1rem;
+    }
+</style>
 
-    <!-- Filters Card -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6">
-        <form method="GET" action="{{ route('admin.tugas.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div class="sm:col-span-2 relative">
-                <input type="text" 
-                       name="search" 
-                       value="{{ request('search') }}" 
-                       placeholder="Cari judul tugas atau tahun anggaran..." 
-                       class="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-600">
-                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<main class="flex-1 p-6 md:p-8 overflow-y-auto bg-[#fafcfb]">
+    <div class="flex flex-col w-full max-w-7xl mx-auto gap-6">
+
+        {{-- ===== PAGE HEADER ===== --}}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
+                    <span class="material-symbols-outlined text-[22px]">assignment</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-xl font-bold text-[#064e3b] tracking-tight">Manajemen Penugasan Dokumen OPD</h1>
+                        <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">T.A. {{ date('Y') }} • Triwulan I</span>
+                    </div>
+                    <p class="text-[13px] text-slate-500 mt-0.5">Buat instruksi tugas, pilih format pengumpulan, dan pantau respons OPD secara terpusat</p>
+                </div>
+            </div>
+            @if(Auth::user()->isAdminOrSuperAdmin())
+                <a href="{{ route('admin.tugas.create') }}"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full">
+                    <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    <span>Buat Tugas Baru</span>
+                </a>
+            @endif
+        </div>
+
+        {{-- ===== FILTER BAR ===== --}}
+        <form method="GET" action="{{ route('admin.tugas.index') }}"
+              class="bg-white p-2 shadow-xs border border-emerald-100/80 flex flex-col md:flex-row items-stretch gap-2.5 rounded-full">
+            {{-- Search --}}
+            <div class="relative flex-1 flex items-center bg-[#f0f5f2] px-3.5 py-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#059669]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined text-slate-400 text-[20px] mr-2.5">search</span>
+                <input class="w-full bg-transparent p-0 text-slate-800 placeholder:text-slate-400 text-[13px] focus:outline-none focus:ring-0"
+                       name="search"
+                       value="{{ request('search') }}"
+                       placeholder="Cari judul tugas atau tahun anggaran..."
+                       type="text">
             </div>
 
-            <div>
-                <select name="format" class="w-full py-2 px-3 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-600">
+            {{-- Format Filter --}}
+            <div class="relative min-w-[200px]">
+                <select name="format" class="w-full h-full bg-[#f0f5f2] hover:bg-[#e6efe9] text-slate-700 text-[13px] font-medium py-2.5 pl-4 pr-10 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#059669]/20 transition-colors rounded-full">
                     <option value="">Semua Format</option>
                     <option value="digital" {{ request('format') == 'digital' ? 'selected' : '' }}>Digital (Upload File)</option>
+                    <option value="hybrid" {{ request('format') == 'hybrid' ? 'selected' : '' }}>Hybrid (Digital &amp; Fisik)</option>
                     <option value="fisik" {{ request('format') == 'fisik' ? 'selected' : '' }}>Fisik (Manual)</option>
-                    <option value="hybrid" {{ request('format') == 'hybrid' ? 'selected' : '' }}>Hybrid (Keduanya)</option>
                 </select>
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">expand_more</span>
             </div>
 
+            {{-- Buttons --}}
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 py-2 px-3 rounded-xl bg-blue-900 text-white font-semibold text-sm hover:bg-blue-950 transition text-center">
-                    Filter
+                <button type="submit" class="px-6 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-xs flex items-center justify-center gap-2 transition-colors rounded-full">
+                    <span class="material-symbols-outlined text-[18px]">tune</span>
+                    <span>Filter</span>
                 </button>
-                @if(request()->anyFilled(['search', 'format', 'status']))
-                    <a href="{{ route('admin.tugas.index') }}" class="py-2 px-3 rounded-xl bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200 transition text-center">
+                @if(request()->anyFilled(['search', 'format']))
+                    <a href="{{ route('admin.tugas.index') }}" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium flex items-center gap-1.5 transition-colors rounded-full">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
                         Reset
                     </a>
                 @endif
             </div>
         </form>
-    </div>
 
-    <!-- Task List -->
-    <div class="space-y-4">
-        @forelse($tugasList as $tugas)
-            @php
-                $totalOpd = $tugas->total_opd ?: 1;
-                $pct = round(($tugas->total_terkumpul / $totalOpd) * 100);
-                $isOverdue = $tugas->isPastDeadline();
-            @endphp
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div class="space-y-2 flex-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $tugas->status === 'aktif' ? 'bg-blue-100 text-blue-900' : 'bg-slate-100 text-slate-600' }}">
-                                {{ ucfirst($tugas->status) }}
-                            </span>
-                            <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200">
-                                {{ $tugas->format_label }}
-                            </span>
-                            <span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                                TA {{ $tugas->tahun_anggaran }}
-                            </span>
+        {{-- Filter status bar --}}
+        <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2 text-slate-500 text-[12px]">
+                <span>Menampilkan <strong class="text-[#064e3b] font-bold text-[13px]">{{ $tugasList->total() }}</strong> penugasan</span>
+                <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span class="text-[#059669] font-bold">Sinkronisasi Sofifi Cloud Aktif</span>
+            </div>
+            <div class="flex items-center gap-3 text-[12px] text-slate-500">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Berjalan</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Berakhir</span>
+            </div>
+        </div>
+
+        {{-- ===== TASK CARDS ===== --}}
+        <div class="flex flex-col gap-4">
+            @forelse($tugasList as $tugas)
+                @php
+                    $totalOpd = $tugas->total_opd ?: 1;
+                    $pct = round(($tugas->total_terkumpul / $totalOpd) * 100);
+                    $isOverdue = $tugas->isPastDeadline();
+                @endphp
+
+                <div class="task-card bg-white rounded-3xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col gap-4 border {{ $isOverdue ? 'border-rose-200 hover:border-rose-300' : 'border-emerald-100/80 hover:border-emerald-200' }}">
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        {{-- Left: Title & Meta --}}
+                        <div class="flex-1 flex flex-col gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold
+                                    {{ $tugas->status === 'aktif' ? 'bg-emerald-50 text-[#059669] border border-emerald-200' : 'bg-slate-100 text-slate-600' }}">
+                                    {{ ucfirst($tugas->status) }}
+                                </span>
+                                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-medium
+                                    {{ $tugas->format === 'hybrid' ? 'bg-amber-50 text-amber-800 border border-amber-200/50' : 'bg-[#f0f5f2] text-slate-600' }}">
+                                    {{ $tugas->format_label }}
+                                </span>
+                                <span class="inline-flex items-center px-3 py-0.5 rounded-full bg-[#f0f5f2] text-slate-600 text-[11px] font-medium">
+                                    TA {{ $tugas->tahun_anggaran }}
+                                </span>
+                            </div>
+
+                            <h2 class="text-base font-bold text-[#064e3b] tracking-tight leading-snug hover:text-[#059669] transition-colors">
+                                <a href="{{ route('admin.tugas.show', $tugas) }}">{{ $tugas->judul }}</a>
+                            </h2>
+
+                            @if($tugas->deskripsi)
+                                <p class="text-[13px] text-slate-500 line-clamp-2 leading-relaxed">{{ $tugas->deskripsi }}</p>
+                            @endif
                         </div>
 
-                        <h2 class="text-base font-bold text-slate-900">
-                            <a href="{{ route('admin.tugas.show', $tugas) }}" class="hover:text-blue-700 transition">
-                                {{ $tugas->judul }}
-                            </a>
-                        </h2>
-
-                        @if($tugas->deskripsi)
-                            <p class="text-xs text-slate-500 line-clamp-2">{{ $tugas->deskripsi }}</p>
-                        @endif
-
-                        <!-- Progress indicator -->
-                        <div class="pt-2 max-w-md">
-                            <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
-                                <span>Terkumpul: <strong class="text-slate-800">{{ $tugas->total_terkumpul }} dari {{ $tugas->total_opd }} OPD</strong></span>
-                                <span class="font-bold text-slate-800">{{ $pct }}%</span>
+                        {{-- Right: Deadline --}}
+                        <div class="flex md:flex-col items-end md:items-end justify-between md:justify-start gap-1 shrink-0 bg-[#f7faf8] md:bg-transparent p-2.5 md:p-0 rounded-2xl">
+                            <div class="flex items-center gap-1.5 text-slate-700 text-[12px]">
+                                <span class="material-symbols-outlined {{ $isOverdue ? 'text-rose-500' : 'text-[#059669]' }} text-[18px]">
+                                    {{ $isOverdue ? 'event_busy' : 'alarm' }}
+                                </span>
+                                <span class="font-semibold">{{ $tugas->deadline->translatedFormat('d F Y') }} - {{ $tugas->deadline->format('H:i') }} WIT</span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                <div class="bg-gradient-to-r from-blue-700 to-sky-500 h-2.5 rounded-full" style="width: {{ $pct }}%"></div>
+                            <div class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full
+                                {{ $isOverdue ? 'text-rose-600 bg-rose-50 border border-rose-200' : 'text-[#059669] bg-emerald-50 border border-emerald-200' }}">
+                                @if(!$isOverdue)
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse"></span>
+                                @endif
+                                <span>{{ $tugas->sisa_waktu_label }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Deadline info & Actions -->
-                    <div class="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end justify-between gap-3 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                        <div class="text-left lg:text-right">
-                            <span class="text-xs font-bold block {{ $isOverdue ? 'text-rose-600' : 'text-slate-800' }}">
-                                ⏰ {{ $tugas->deadline->translatedFormat('d F Y - H:i') }} WIT
-                            </span>
-                            <span class="text-[11px] font-semibold block {{ $isOverdue ? 'text-rose-500' : 'text-blue-700' }}">
-                                {{ $tugas->sisa_waktu_label }}
-                            </span>
+                    {{-- Bottom: Progress + Actions --}}
+                    <div class="pt-3 flex flex-col md:flex-row md:items-center justify-between gap-4 border-t border-slate-100">
+                        {{-- Progress --}}
+                        <div class="flex-1 max-w-xl flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-[12px]">
+                                <span class="text-slate-500 font-medium">
+                                    Terkumpul: <strong class="text-slate-900 font-bold">{{ $tugas->total_terkumpul }}</strong> dari {{ $tugas->total_opd }} OPD
+                                </span>
+                                <span class="{{ $pct >= 80 ? 'text-[#059669]' : ($pct > 0 ? 'text-teal-700' : 'text-slate-400') }} font-bold">{{ $pct }}%</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full bg-striped-progress transition-all duration-700
+                                    {{ $isOverdue && $pct < 100 ? 'bg-rose-500' : 'bg-gradient-to-r from-emerald-500 to-teal-400' }}"
+                                     style="width: {{ $pct }}%"></div>
+                            </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('admin.tugas.ics', $tugas) }}" 
-                               class="p-2 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 text-xs font-semibold transition" 
+                        {{-- Actions --}}
+                        <div class="flex items-center gap-2 self-end md:self-center shrink-0">
+                            <a href="{{ route('admin.tugas.ics', $tugas) }}"
+                               class="w-9 h-9 rounded-xl bg-[#f0f5f2] hover:bg-emerald-50 text-slate-600 hover:text-[#064e3b] flex items-center justify-center transition-colors"
                                title="Unduh Kalender .ics">
-                                📅
+                                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
                             </a>
-                            <a href="{{ route('admin.tugas.show', $tugas) }}" 
-                               class="px-3.5 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold transition shadow-sm">
-                                Monitoring OPD
+                            <a href="{{ route('admin.tugas.show', $tugas) }}"
+                               class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#059669] hover:bg-[#047857] text-white text-[12px] font-semibold shadow-xs transition-all active:scale-[0.98]">
+                                <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                                <span>Monitoring OPD</span>
                             </a>
-                            <a href="{{ route('admin.tugas.edit', $tugas) }}" 
-                               class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" 
-                               title="Edit Tugas">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                            </a>
-                            @if(auth()->user()->isAdminOrSuperAdmin())
-                            <div x-data="{ showConfirm: false }" class="inline">
-                                <form action="{{ route('admin.tugas.destroy', $tugas) }}" method="POST" class="inline" @submit.prevent="showConfirm = true" x-ref="deleteForm">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-600 transition" title="Hapus Tugas">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            @if(Auth::user()->isAdminOrSuperAdmin())
+                                <a href="{{ route('admin.tugas.edit', $tugas) }}"
+                                   class="w-9 h-9 rounded-xl bg-[#f0f5f2] hover:bg-emerald-50 text-slate-600 hover:text-[#064e3b] flex items-center justify-center transition-colors"
+                                   title="Edit Penugasan">
+                                    <span class="material-symbols-outlined text-[18px]">edit_square</span>
+                                </a>
+                                <div x-data="{ showConfirm: false }" class="inline">
+                                    <button @click="showConfirm = true"
+                                            class="w-9 h-9 rounded-xl bg-[#f0f5f2] hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
+                                            title="Hapus Tugas"
+                                            type="button">
+                                        <span class="material-symbols-outlined text-[18px]">delete</span>
                                     </button>
-                                </form>
-                                
-                                <template x-teleport="body">
-                                    <div x-show="showConfirm" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-transition.opacity>
-                                        <div @click.outside="showConfirm = false" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl" x-transition.scale.origin.bottom>
-                                            <div class="flex items-center gap-3 mb-4">
-                                                <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    <template x-teleport="body">
+                                        <div x-show="showConfirm" style="display:none"
+                                             class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+                                             x-transition.opacity>
+                                            <div @click.outside="showConfirm = false"
+                                                 class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+                                                 x-transition.scale.origin.bottom>
+                                                <div class="flex items-center gap-3 mb-4">
+                                                    <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                                                        <span class="material-symbols-outlined text-[22px]">warning</span>
+                                                    </div>
+                                                    <h3 class="text-lg font-bold text-slate-900">Hapus Tugas?</h3>
                                                 </div>
-                                                <h3 class="text-lg font-bold text-slate-900">Hapus Tugas?</h3>
-                                            </div>
-                                            <p class="text-sm text-slate-600 mb-6">Apakah Anda yakin ingin menghapus tugas ini? Data yang terhubung akan ikut terhapus permanen.</p>
-                                            <div class="flex gap-2 justify-end">
-                                                <button @click="showConfirm = false" type="button" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Batal</button>
-                                                <button @click="$refs.deleteForm.submit()" type="button" class="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-sm">Ya, Hapus</button>
+                                                <p class="text-sm text-slate-600 mb-6">Apakah Anda yakin ingin menghapus tugas ini? Data yang terhubung akan ikut terhapus permanen.</p>
+                                                <div class="flex gap-2 justify-end">
+                                                    <button @click="showConfirm = false" type="button" class="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition">Batal</button>
+                                                    <form action="{{ route('admin.tugas.destroy', $tugas) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-sm">Ya, Hapus</button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </template>
-                            </div>
+                                    </template>
+                                </div>
                             @endif
                         </div>
                     </div>
                 </div>
-            </div>
-        @empty
-            <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-                Belum ada data tugas. Silakan buat tugas baru.
-            </div>
-        @endforelse
+            @empty
+                <div class="flex flex-col items-center justify-center p-12 bg-white border border-emerald-100/80 rounded-3xl text-center gap-3">
+                    <div class="w-14 h-14 rounded-2xl bg-[#f0f5f2] flex items-center justify-center text-slate-400">
+                        <span class="material-symbols-outlined text-[32px]">manage_search</span>
+                    </div>
+                    <h3 class="text-base font-bold text-[#064e3b]">Tidak Ada Tugas yang Ditemukan</h3>
+                    <p class="text-[13px] text-slate-500 max-w-sm">Silakan ubah filter kata kunci pencarian atau buat tugas baru.</p>
+                    @if(Auth::user()->isAdminOrSuperAdmin())
+                        <a href="{{ route('admin.tugas.create') }}"
+                           class="mt-2 inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold rounded-full transition-all">
+                            <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                            Buat Tugas Baru
+                        </a>
+                    @endif
+                </div>
+            @endforelse
 
-        @if($tugasList->hasPages())
-            <div class="mt-4">
-                {{ $tugasList->links() }}
+            @if($tugasList->hasPages())
+                <div class="mt-2">
+                    {{ $tugasList->links() }}
+                </div>
+            @endif
+        </div>
+
+        {{-- ===== INFO BANNER ===== --}}
+        <div class="flex items-center gap-3.5 p-4 rounded-2xl bg-[#e6f4ee] border border-emerald-200/70 text-slate-700">
+            <div class="w-8 h-8 rounded-full bg-[#059669] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <span class="material-symbols-outlined text-[18px]">info</span>
             </div>
-        @endif
+            <p class="text-[12px] leading-relaxed text-slate-700">
+                <span class="font-bold text-[#064e3b]">Informasi Pengiriman:</span>
+                Penugasan dokumen baru akan otomatis terkirim melalui antrean notifikasi WhatsApp Gateway resmi Bidang Perekonomian dan Perdagangan Bappeda Malut ke setiap Kepala Sub Bagian Perencanaan OPD terkait.
+            </p>
+        </div>
     </div>
+</main>
 </x-app-layout>
