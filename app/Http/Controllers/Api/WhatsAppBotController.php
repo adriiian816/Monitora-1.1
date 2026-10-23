@@ -247,7 +247,7 @@ class WhatsAppBotController extends Controller
     protected function buildInfoReply(): string
     {
         return "ℹ️ *PANDUAN & INFORMASI SISTEM MONITORA*\n"
-            ."Bappeda Provinsi Maluku Utara\n"
+            ."Bidang Perekonomian Dan Perdagangan | Bappeda Provinsi Maluku Utara\n"
             ."────────────────────────\n\n"
             ."📌 *Ketentuan Pengunggahan Berkas:*\n"
             ."1. Format file yang diterima: Dokumen PDF, Spreadsheet Excel (.xlsx), atau Arsip ZIP.\n"

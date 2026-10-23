@@ -233,7 +233,7 @@ class MonitoraSeeder extends Seeder
             ['judul' => 'Pengumpulan Asli Berita Acara Rekonsiliasi Realisasi Belanja Modal'],
             [
                 'admin_id' => $admin->id,
-                'deskripsi' => 'Pengumpulan fisik berkas asli Berita Acara Rekonsiliasi Belanja Modal semester I. Wajib diantar langsung oleh staf perencana/keuangan OPD ke BAPPEDA Provinsi Maluku Utara.',
+                'deskripsi' => 'Pengumpulan fisik berkas asli Berita Acara Rekonsiliasi Belanja Modal semester I. Wajib diantar langsung oleh staf perencana/keuangan OPD ke Bidang Perekonomian Dan Perdagangan.',
                 'format_pengumpulan' => 'fisik',
                 'deadline' => Carbon::now()->subDays(2)->setTime(15, 0, 0),
                 'tahun_anggaran' => '2026',
