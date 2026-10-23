@@ -10,7 +10,9 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class PenugasanController extends Controller
@@ -229,18 +231,34 @@ class PenugasanController extends Controller
 
         $existingPivot = $anggota->pivot;
 
-        // If no file was actually selected (browser sends empty file input),
-        // remove it from the request so the 'nullable' rule passes cleanly.
-        if ($request->hasFile('file_laporan')) {
-            $uploadedFile = $request->file('file_laporan');
-            if (! $uploadedFile->isValid()) {
-                $request->files->remove('file_laporan');
+        // Auto-prepend https:// to link_dokumen if scheme is missing
+        if ($request->filled('link_dokumen')) {
+            $link = trim((string) $request->input('link_dokumen'));
+            if (! preg_match('#^https?://#i', $link)) {
+                $request->merge(['link_dokumen' => 'https://'.$link]);
             }
         }
 
-        $validated = $request->validate([
+        $validationData = $request->all();
+
+        // If no file was actually selected (browser sends empty file input with UPLOAD_ERR_NO_FILE),
+        // remove it from validation data so the 'nullable' rule passes cleanly without validation.uploaded error.
+        $uploadedFile = $request->file('file_laporan');
+        if (! $uploadedFile || ! $uploadedFile->isValid()) {
+            unset($validationData['file_laporan']);
+        }
+
+        $hasExistingFile = ! empty($existingPivot?->file_laporan);
+        $hasNewFile = $request->hasFile('file_laporan');
+        $hasLink = ! empty($request->input('link_dokumen'));
+
+        $validated = Validator::make($validationData, [
             'penerima_id' => ['nullable', 'exists:users,id'],
-            'isi_laporan' => ['required', 'string', 'max:5000'],
+            'isi_laporan' => [
+                ($hasExistingFile || $hasNewFile || $hasLink) ? 'nullable' : 'required',
+                'string',
+                'max:5000',
+            ],
             'link_dokumen' => ['nullable', 'url', 'max:500'],
             'file_laporan' => [
                 'nullable',
@@ -250,14 +268,14 @@ class PenugasanController extends Controller
             ],
             'tandai_selesai' => ['nullable', 'boolean'],
         ], [
-            'isi_laporan.required' => 'Ringkasan / uraian laporan wajib diisi.',
+            'isi_laporan.required' => 'Mohon isi ringkasan laporan, atau unggah berkas laporan / cantumkan link dokumen.',
             'isi_laporan.max' => 'Uraian laporan terlalu panjang (maks 5000 karakter).',
-            'link_dokumen.url' => 'Format link dokumen tidak valid. Pastikan diawali dengan https://',
+            'link_dokumen.url' => 'Format link dokumen tidak valid. Pastikan link diawali dengan https://',
             'file_laporan.file' => 'Berkas laporan gagal diunggah. Pastikan file tidak rusak dan coba lagi.',
             'file_laporan.uploaded' => 'Berkas gagal diunggah ke server. Pastikan ukuran file tidak melebihi 25 MB dan coba lagi.',
             'file_laporan.max' => 'Ukuran berkas terlalu besar. Maksimal yang diizinkan adalah 25 MB.',
             'file_laporan.mimes' => 'Format berkas tidak didukung. Gunakan: PDF, Word (doc/docx), Excel (xls/xlsx), PowerPoint, ZIP, RAR, JPG, atau PNG.',
-        ]);
+        ])->validate();
 
         $filePath = $existingPivot?->file_laporan;
         $fileName = $existingPivot?->file_laporan_name;
@@ -276,7 +294,7 @@ class PenugasanController extends Controller
         }
 
         $statusPenugasan = $request->boolean('tandai_selesai', true) ? 'selesai' : ($existingPivot->status_penugasan ?? 'sedang_dikerjakan');
-        if ($existingPivot->status_penugasan === 'belum_dikerjakan' && ! $request->boolean('tandai_selesai')) {
+        if ($existingPivot && $existingPivot->status_penugasan === 'belum_dikerjakan' && ! $request->boolean('tandai_selesai')) {
             $statusPenugasan = 'sedang_dikerjakan';
         }
 
@@ -285,13 +303,13 @@ class PenugasanController extends Controller
             'file_laporan' => $filePath,
             'file_laporan_name' => $fileName,
             'file_laporan_size' => $fileSize,
-            'isi_laporan' => $validated['isi_laporan'],
+            'isi_laporan' => $validated['isi_laporan'] ?? null,
             'link_dokumen' => $validated['link_dokumen'] ?? null,
             'dilaporkan_pada' => now(),
             'status_penugasan' => $statusPenugasan,
             // If was not confirmed yet, mark as dikonfirmasi
-            'status_konfirmasi' => ($existingPivot->status_konfirmasi === 'menunggu_konfirmasi' || empty($existingPivot->status_konfirmasi)) ? 'dikonfirmasi' : $existingPivot->status_konfirmasi,
-            'dikonfirmasi_pada' => $existingPivot->dikonfirmasi_pada ?: now(),
+            'status_konfirmasi' => ($existingPivot && ($existingPivot->status_konfirmasi === 'menunggu_konfirmasi' || empty($existingPivot->status_konfirmasi))) ? 'dikonfirmasi' : ($existingPivot->status_konfirmasi ?? 'dikonfirmasi'),
+            'dikonfirmasi_pada' => $existingPivot?->dikonfirmasi_pada ?: now(),
         ]);
 
         // Reload fresh pivot for WhatsApp notifications
@@ -299,8 +317,12 @@ class PenugasanController extends Controller
         $penugasan->load('pemberi');
 
         if ($updatedAnggota && $updatedAnggota->pivot instanceof PenugasanPenerima) {
-            $whatsAppService->sendLaporanPenugasanToAdmin($penugasan, $updatedAnggota, $updatedAnggota->pivot);
-            $whatsAppService->sendLaporanConfirmationToAnggota($penugasan, $updatedAnggota, $updatedAnggota->pivot);
+            try {
+                $whatsAppService->sendLaporanPenugasanToAdmin($penugasan, $updatedAnggota, $updatedAnggota->pivot);
+                $whatsAppService->sendLaporanConfirmationToAnggota($penugasan, $updatedAnggota, $updatedAnggota->pivot);
+            } catch (\Throwable $e) {
+                Log::warning('WhatsApp report notification error: '.$e->getMessage());
+            }
         }
 
         return redirect()->route('admin.penugasan.show', $penugasan)

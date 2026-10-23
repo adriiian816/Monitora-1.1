@@ -10,6 +10,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class SubmissionController extends Controller
 {
@@ -36,6 +37,15 @@ class SubmissionController extends Controller
 
         $existingSubmission = $tugasOpd->submission;
 
+        $validationData = $request->all();
+
+        // If no file was actually selected (browser sends empty file input),
+        // remove it from validation data so the 'nullable' rule passes cleanly when updating.
+        $uploadedFile = $request->file('berkas_dokumen');
+        if (! $uploadedFile || ! $uploadedFile->isValid()) {
+            unset($validationData['berkas_dokumen']);
+        }
+
         if ($format === 'digital' || $format === 'hybrid') {
             $rules['berkas_dokumen'] = [
                 $existingSubmission && $existingSubmission->file_path ? 'nullable' : 'required',
@@ -52,7 +62,7 @@ class SubmissionController extends Controller
             $rules['tanggal_penyerahan_fisik'] = ['required', 'date'];
         }
 
-        $validated = $request->validate($rules);
+        $validated = Validator::make($validationData, $rules)->validate();
 
         $filePath = $existingSubmission?->file_path;
         $fileName = $existingSubmission?->file_original_name;

@@ -414,4 +414,114 @@ class PenugasanTest extends TestCase
         $adminResponse = $this->actingAs($this->admin)->get(route('admin.penugasan.download-laporan', [$penugasan, $anggotaUser]));
         $adminResponse->assertStatus(200);
     }
+
+    public function test_anggota_bidang_can_submit_report_without_file(): void
+    {
+        $anggotaUser = User::factory()->anggotaBidang()->create();
+
+        $penugasan = Penugasan::create([
+            'pemberi_id' => $this->admin->id,
+            'judul' => 'Rakor Tanpa Berkas File',
+            'tanggal_kegiatan' => now()->format('Y-m-d'),
+        ]);
+
+        $penugasan->penerima()->attach($anggotaUser->id, [
+            'status_penugasan' => 'sedang_dikerjakan',
+            'status_konfirmasi' => 'dikonfirmasi',
+            'status_laporan' => 'belum_dilaporkan',
+        ]);
+
+        // Simulating browser sending empty file input
+        $emptyFile = new UploadedFile('', '', null, UPLOAD_ERR_NO_FILE, true);
+
+        $response = $this->actingAs($anggotaUser)->post(route('admin.penugasan.submit-laporan', $penugasan), [
+            'isi_laporan' => 'Kegiatan rakor berjalan lancar dan selesai pada pukul 12.00 WIT.',
+            'link_dokumen' => 'drive.google.com/test-folder', // Missing https:// scheme should be auto-prefixed
+            'file_laporan' => $emptyFile,
+            'tandai_selesai' => '1',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.penugasan.show', $penugasan));
+
+        $this->assertDatabaseHas('penugasan_penerima', [
+            'penugasan_id' => $penugasan->id,
+            'user_id' => $anggotaUser->id,
+            'status_laporan' => 'sudah_dilaporkan',
+            'status_penugasan' => 'selesai',
+            'file_laporan' => null,
+            'link_dokumen' => 'https://drive.google.com/test-folder',
+        ]);
+    }
+
+    public function test_anggota_bidang_can_submit_report_with_file_only(): void
+    {
+        Storage::fake('public');
+
+        $anggotaUser = User::factory()->anggotaBidang()->create();
+
+        $penugasan = Penugasan::create([
+            'pemberi_id' => $this->admin->id,
+            'judul' => 'Unggah File Saja Tanpa Uraian Teks',
+            'tanggal_kegiatan' => now()->format('Y-m-d'),
+        ]);
+
+        $penugasan->penerima()->attach($anggotaUser->id, [
+            'status_penugasan' => 'sedang_dikerjakan',
+            'status_konfirmasi' => 'dikonfirmasi',
+            'status_laporan' => 'belum_dilaporkan',
+        ]);
+
+        $fakeFile = UploadedFile::fake()->create('laporan_resmi.pdf', 2048, 'application/pdf');
+
+        $response = $this->actingAs($anggotaUser)->post(route('admin.penugasan.submit-laporan', $penugasan), [
+            'isi_laporan' => '',
+            'file_laporan' => $fakeFile,
+            'tandai_selesai' => '1',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.penugasan.show', $penugasan));
+
+        $this->assertDatabaseHas('penugasan_penerima', [
+            'penugasan_id' => $penugasan->id,
+            'user_id' => $anggotaUser->id,
+            'status_laporan' => 'sudah_dilaporkan',
+            'file_laporan_name' => 'laporan_resmi.pdf',
+        ]);
+    }
+
+    public function test_admin_can_submit_report_on_behalf_of_anggota(): void
+    {
+        $anggotaUser = User::factory()->anggotaBidang()->create();
+
+        $penugasan = Penugasan::create([
+            'pemberi_id' => $this->admin->id,
+            'judul' => 'Tugas Yang Diinput Admin',
+            'tanggal_kegiatan' => now()->format('Y-m-d'),
+        ]);
+
+        $penugasan->penerima()->attach($anggotaUser->id, [
+            'status_penugasan' => 'sedang_dikerjakan',
+            'status_konfirmasi' => 'dikonfirmasi',
+            'status_laporan' => 'belum_dilaporkan',
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.penugasan.submit-laporan', $penugasan), [
+            'penerima_id' => $anggotaUser->id,
+            'isi_laporan' => 'Laporan fisik diserahkan langsung ke ruangan admin.',
+            'tandai_selesai' => '1',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.penugasan.show', $penugasan));
+
+        $this->assertDatabaseHas('penugasan_penerima', [
+            'penugasan_id' => $penugasan->id,
+            'user_id' => $anggotaUser->id,
+            'status_laporan' => 'sudah_dilaporkan',
+            'status_penugasan' => 'selesai',
+            'isi_laporan' => 'Laporan fisik diserahkan langsung ke ruangan admin.',
+        ]);
+    }
 }

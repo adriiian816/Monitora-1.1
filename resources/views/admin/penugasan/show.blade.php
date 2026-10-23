@@ -325,11 +325,12 @@
                             <div x-show="editingReport || '{{ $isLaporan }}' === 'belum_dilaporkan'" class="mt-3">
                                 <form method="POST" action="{{ route('admin.penugasan.submit-laporan', $penugasan) }}" enctype="multipart/form-data" class="space-y-3">
                                     @csrf
+                                    <input type="hidden" name="penerima_id" value="{{ $myAssignment->id }}">
                                     <div>
                                         <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                                            Ringkasan / Uraian Pelaksanaan Kegiatan <span class="text-rose-500">*</span>
+                                            Ringkasan / Uraian Pelaksanaan Kegiatan <span class="text-slate-400 font-normal lowercase">(opsional jika melampirkan berkas)</span>
                                         </label>
-                                        <textarea name="isi_laporan" rows="3" required placeholder="Tuliskan uraian hasil kegiatan, notulensi rapat, kesimpulan, atau rekomendasi..." class="w-full text-xs p-2.5 rounded-xl border border-emerald-200 bg-white focus:ring-2 focus:ring-[#059669]/20 leading-relaxed">{{ old('isi_laporan', $myPivot->isi_laporan) }}</textarea>
+                                        <textarea name="isi_laporan" rows="3" placeholder="Tuliskan uraian hasil kegiatan, notulensi rapat, kesimpulan, atau rekomendasi..." class="w-full text-xs p-2.5 rounded-xl border border-emerald-200 bg-white focus:ring-2 focus:ring-[#059669]/20 leading-relaxed">{{ old('isi_laporan', $myPivot->isi_laporan) }}</textarea>
                                     </div>
 
                                     <div>
@@ -414,7 +415,7 @@
                                 $statusTugas = $anggota->pivot->status_penugasan;
                                 $statusLap = $anggota->pivot->status_laporan;
                             @endphp
-                            <tr class="hover:bg-[#f0f8f4] transition-colors" x-data="{ showUraian: false }">
+                            <tr class="hover:bg-[#f0f8f4] transition-colors" x-data="{ showUraian: false, showAdminReportForm: false }">
                                 <!-- Penerima -->
                                 <td class="px-5 py-4">
                                     <div class="flex items-center gap-2">
@@ -532,6 +533,13 @@
                                                         <span>Link</span>
                                                     </a>
                                                 @endif
+
+                                                @if(Auth::user()->isAdminOrSuperAdmin())
+                                                    <button type="button" @click="showAdminReportForm = !showAdminReportForm" class="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-0.5 hover:underline">
+                                                        <span class="material-symbols-outlined text-[13px]">edit_document</span>
+                                                        <span x-text="showAdminReportForm ? 'Tutup' : 'Ubah Laporan'"></span>
+                                                    </button>
+                                                @endif
                                             </div>
 
                                             {{-- Expandable Ringkasan Laporan --}}
@@ -541,10 +549,59 @@
                                             </div>
                                         </div>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                            <span class="material-symbols-outlined text-[14px]">timelapse</span>
-                                            Belum Dilaporkan
-                                        </span>
+                                        <div class="flex flex-col gap-1 items-start">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                <span class="material-symbols-outlined text-[14px]">timelapse</span>
+                                                Belum Dilaporkan
+                                            </span>
+                                            @if(Auth::user()->isAdminOrSuperAdmin())
+                                                <button type="button" @click="showAdminReportForm = !showAdminReportForm" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline mt-0.5">
+                                                    <span class="material-symbols-outlined text-[13px]">upload_file</span>
+                                                    <span x-text="showAdminReportForm ? 'Tutup Form' : 'Input Laporan'">Input Laporan</span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    {{-- Admin Report Submission / Edit Form in Table --}}
+                                    @if(Auth::user()->isAdminOrSuperAdmin())
+                                        <div x-show="showAdminReportForm" x-cloak class="mt-2.5 p-3 bg-white rounded-2xl border border-emerald-200 shadow-sm space-y-2 text-left w-72 max-w-sm">
+                                            <div class="text-[11px] font-bold text-[#064e3b] flex items-center justify-between pb-1 border-b border-slate-100">
+                                                <span>Input Laporan: {{ Str::limit($anggota->name, 18) }}</span>
+                                                <button type="button" @click="showAdminReportForm = false" class="text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</button>
+                                            </div>
+                                            <form method="POST" action="{{ route('admin.penugasan.submit-laporan', $penugasan) }}" enctype="multipart/form-data" class="space-y-2">
+                                                @csrf
+                                                <input type="hidden" name="penerima_id" value="{{ $anggota->id }}">
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Ringkasan / Uraian</label>
+                                                    <textarea name="isi_laporan" rows="2" placeholder="Uraian hasil kegiatan..." class="w-full text-xs p-1.5 rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#059669]">{{ $anggota->pivot->isi_laporan }}</textarea>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Unggah Berkas Laporan</label>
+                                                    <input type="file" name="file_laporan" class="w-full text-[10px] text-slate-500 file:mr-1.5 file:py-0.5 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-[#059669]">
+                                                    @if($anggota->pivot->file_laporan_name)
+                                                        <p class="text-[9px] text-slate-400 mt-0.5 truncate">Tersimpan: {{ $anggota->pivot->file_laporan_name }}</p>
+                                                    @endif
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Link Dokumen (Opsional)</label>
+                                                    <input type="url" name="link_dokumen" value="{{ $anggota->pivot->link_dokumen }}" placeholder="https://drive.google.com/..." class="w-full text-xs p-1 rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#059669]">
+                                                </div>
+                                                <div class="flex items-center gap-1.5 pt-0.5">
+                                                    <input type="checkbox" id="tandai_selesai_{{ $anggota->id }}" name="tandai_selesai" value="1" checked class="rounded text-[#059669] focus:ring-[#059669]/20 text-xs">
+                                                    <label for="tandai_selesai_{{ $anggota->id }}" class="text-[10px] text-slate-600 font-medium">Tandai status <strong>Selesai</strong></label>
+                                                </div>
+                                                <div class="flex items-center gap-1.5 pt-1">
+                                                    <button type="submit" class="px-2.5 py-1 rounded-full bg-[#059669] hover:bg-[#047857] text-white text-[10px] font-bold shadow-xs">
+                                                        Simpan Laporan
+                                                    </button>
+                                                    <button type="button" @click="showAdminReportForm = false" class="px-2 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-semibold">
+                                                        Batal
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     @endif
                                 </td>
 
