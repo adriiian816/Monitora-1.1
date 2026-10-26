@@ -15,6 +15,13 @@ export default {
                 sans: ['"Plus Jakarta Sans"', 'Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                zen: {
+                    dark: '#091A14',
+                    light: '#F8F9F5',
+                    accent: '#4ADE80',
+                    muted: '#A3B8AD',
+                    slate: '#0F172A',
+                },
                 brand: {
                     forest: '#064e3b',
                     forestDark: '#042f2e',

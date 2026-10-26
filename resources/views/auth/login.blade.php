@@ -1,18 +1,18 @@
 <x-guest-layout>
-    <div class="bg-white rounded-3xl border border-emerald-100 shadow-2xl p-7 sm:p-10 relative overflow-hidden">
+    <div class="bg-[#0D221B]/95 backdrop-blur-2xl rounded-3xl border border-emerald-500/25 shadow-[0_25px_60px_rgba(0,0,0,0.6)] p-7 sm:p-10 relative overflow-hidden text-white">
 
         {{-- Header Branding --}}
         <div class="text-center mb-6">
-            <div class="mx-auto w-16 h-16 rounded-2xl bg-[#064e3b] border border-emerald-400/30 flex items-center justify-center p-2 shadow-lg mb-4">
+            <div class="mx-auto w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center p-2 shadow-[0_0_25px_rgba(74,222,128,0.2)] mb-4">
                 <img alt="MONITORA Logo" class="w-full h-full object-contain rounded-xl" src="{{ asset('logo.png') }}">
             </div>
-            <div class="inline-flex items-center gap-2 mb-2 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-[#064e3b]">MONITORA DRIVE</span>
+            <div class="inline-flex items-center gap-2 mb-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 font-mono">
+                <span class="text-[10.5px] font-extrabold uppercase tracking-widest text-[#4ADE80]">MONITORA DRIVE</span>
                 <span class="w-1 h-1 rounded-full bg-emerald-400"></span>
-                <span class="text-[11px] font-medium text-emerald-800">Bidang Perekonomian &amp; Perdagangan</span>
+                <span class="text-[10.5px] font-medium text-emerald-200">Bidang Perekonomian &amp; Perdagangan</span>
             </div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Masuk ke Portal MONITORA</h1>
-            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Bidang Perekonomian dan Perdagangan — Bappeda Provinsi Maluku Utara</p>
+            <h1 class="text-2xl font-extrabold tracking-tight text-white">Masuk ke Portal MONITORA</h1>
+            <p class="text-xs text-[#A3B8AD] mt-1.5 leading-relaxed">Bidang Perekonomian dan Perdagangan — Bappeda Provinsi Maluku Utara</p>
         </div>
 
         {{-- Session Status --}}
@@ -24,15 +24,14 @@
 
             {{-- Email --}}
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5" for="email">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-[#A3B8AD] mb-1.5" for="email">
                     Alamat Email Resmi / NIP ASN
                 </label>
                 <div class="relative rounded-2xl shadow-xs">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-700">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4ADE80]">
                         <span class="material-symbols-outlined text-[18px]">alternate_email</span>
                     </div>
-                    <input class="block w-full pl-10 pr-3.5 py-3 text-sm text-slate-800 bg-[#f0f5f2] border border-emerald-100 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#059669]/40 focus:border-[#059669] transition-all @error('email') border-rose-400 bg-rose-50 @enderror"
-                           id="email"
+                    <input class="zen-dark-input block w-full pl-10 pr-3.5 py-3 text-sm rounded-2xl transition-all" style="background-color: #061510 !important; color: #FFFFFF !important; border: 1px solid rgba(255, 255, 255, 0.15) !important;" id="email"
                            name="email"
                            type="email"
                            value="{{ old('email') }}"
@@ -46,23 +45,22 @@
             {{-- Password --}}
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700" for="password">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-[#A3B8AD]" for="password">
                         Kata Sandi Akun
                     </label>
                 </div>
                 <div class="relative rounded-2xl shadow-xs">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-700">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4ADE80]">
                         <span class="material-symbols-outlined text-[18px]">lock</span>
                     </div>
-                    <input class="block w-full pl-10 pr-10 py-3 text-sm text-slate-800 bg-[#f0f5f2] border border-emerald-100 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#059669]/40 focus:border-[#059669] transition-all @error('password') border-rose-400 bg-rose-50 @enderror"
-                           id="password"
+                    <input class="zen-dark-input block w-full pl-10 pr-10 py-3 text-sm rounded-2xl transition-all" style="background-color: #061510 !important; color: #FFFFFF !important; border: 1px solid rgba(255, 255, 255, 0.15) !important;" id="password"
                            name="password"
                            type="password"
                            required
                            autocomplete="current-password"
                            placeholder="••••••••••••">
                     <button aria-label="Tampilkan sandi"
-                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-[#059669] focus:outline-none"
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-[#4ADE80] focus:outline-none"
                             id="toggle-password-btn"
                             type="button">
                         <span class="material-symbols-outlined text-[18px]">visibility</span>
@@ -78,10 +76,10 @@
                            id="remember_me"
                            name="remember"
                            class="w-4 h-4 rounded text-[#059669] border-slate-300 focus:ring-[#059669] transition">
-                    <span class="text-slate-600 font-medium">Ingat saya di perangkat ini</span>
+                    <span class="text-[#A3B8AD] font-medium">Ingat saya di perangkat ini</span>
                 </label>
                 @if (Route::has('password.request'))
-                    <a class="font-semibold text-[#059669] hover:text-[#064e3b] transition hover:underline" href="{{ route('password.request') }}">
+                    <a class="font-semibold text-[#4ADE80] hover:text-emerald-300 transition hover:underline" href="{{ route('password.request') }}">
                         Lupa sandi?
                     </a>
                 @endif
@@ -89,7 +87,7 @@
 
             {{-- Submit Button --}}
             <div class="pt-2">
-                <button class="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full font-bold text-sm text-white bg-[#059669] hover:bg-[#047857] active:bg-[#064e3b] shadow-lg shadow-emerald-800/25 transition-all hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#059669] cursor-pointer"
+                <button class="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl font-extrabold text-sm text-[#091A14] bg-[#4ADE80] hover:bg-[#38c86d] shadow-[0_0_25px_rgba(74,222,128,0.3)] hover:shadow-[0_0_35px_rgba(74,222,128,0.5)] transition-all hover:scale-[1.01] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4ADE80] cursor-pointer"
                         type="submit">
                     <span>Masuk ke Portal</span>
                     <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -117,4 +115,34 @@
             });
         }
     </script>
+
+<style>
+    /* Autofill & Input Contrast Fix (Brave, Chrome, Edge) */
+    .zen-dark-input {
+        background-color: #061510 !important;
+        color: #FFFFFF !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    .zen-dark-input:focus {
+        background-color: #081E15 !important;
+        color: #FFFFFF !important;
+        border-color: #4ADE80 !important;
+        box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.3) !important;
+        outline: none !important;
+    }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus, 
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #061510 inset !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        caret-color: #4ADE80 !important;
+        transition: background-color 5000s ease-in-out 0s !important;
+    }
+    input::placeholder {
+        color: #64748B !important;
+        opacity: 0.9 !important;
+    }
+</style>
+
 </x-guest-layout>

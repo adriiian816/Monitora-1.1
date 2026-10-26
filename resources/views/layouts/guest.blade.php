@@ -11,20 +11,40 @@
         <!-- Google Fonts: Plus Jakarta Sans -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
         <!-- Material Symbols -->
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
         <!-- Vite Assets -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <style>
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #061510 inset !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            caret-color: #4ADE80 !important;
+            transition: background-color 5000s ease-in-out 0s !important;
+        }
+        input {
+            background-color: #061510 !important;
+            color: #FFFFFF !important;
+        }
+    </style>
+
     </head>
     <body class="min-h-screen flex flex-col font-sans text-slate-800 antialiased"
-          style="background: linear-gradient(145deg, #022c22 0%, #064e3b 55%, #042f2e 100%); min-height: 100vh;">
+          style="background-color: #091A14; min-height: 100vh;">
 
         <!-- Top Navbar -->
+        
+        <!-- Aurora Glow Effect (ZenABM) -->
+        <div style="position: fixed; top: -150px; left: 50%; transform: translateX(-50%); width: 700px; height: 700px; border-radius: 9999px; background: radial-gradient(circle, rgba(74, 222, 128, 0.16) 0%, rgba(16, 185, 129, 0.08) 40%, transparent 70%); filter: blur(75px); pointer-events: none; z-index: 0;"></div>
         <header class="w-full pt-3 sm:pt-4 px-3 sm:px-6 lg:px-8 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto bg-emerald-950/40 backdrop-blur-md rounded-full border border-emerald-500/30 shadow-lg px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+            <div class="max-w-7xl mx-auto bg-[#061510]/80 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
                 <a class="flex items-center gap-2 sm:gap-3 group" href="{{ route('welcome') }}">
                     <div class="w-7 h-7 sm:w-9 sm:h-9 rounded-xl overflow-hidden border border-emerald-500/20 bg-emerald-950/40 p-1 flex items-center justify-center shrink-0">
                         <img alt="MONITORA Logo" class="w-full h-full object-contain rounded-lg transition-transform group-hover:scale-105" src="{{ asset('logo.png') }}">
@@ -62,7 +82,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="w-full bg-[#03231c]/80 backdrop-blur-md border-t border-emerald-500/20 py-3 sm:py-4 px-4 sm:px-8 mt-auto shrink-0">
+        <footer class="w-full bg-[#061510]/90 backdrop-blur-md border-t border-white/10 py-3 sm:py-4 px-4 sm:px-8 mt-auto shrink-0">
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-3 text-emerald-100/70 text-[10px] sm:text-[11px]">
                 <div class="text-center sm:text-left leading-relaxed">
                     &copy; {{ date('Y') }} MONITORA &bull; Bidang Perekonomian dan Perdagangan, Bappeda Provinsi Maluku Utara

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Opd;
 use App\Models\Penugasan;
+use App\Models\PenugasanPenerima;
 use App\Models\Submission;
 use App\Models\Tugas;
 use App\Models\TugasOpd;
@@ -52,6 +53,129 @@ class DashboardController extends Controller
             $totalDiterima = TugasOpd::where('status', 'diterima')->count();
             $totalTerlambat = TugasOpd::where('status', 'terlambat')->count();
         }
+
+        // ===== BREAKDOWN KEPATUHAN OPD (DONUT CHART) =====
+        $opdQuery = TugasOpd::query();
+        if ($isPic) {
+            $opdQuery->whereIn('opd_id', $handledOpdIds);
+        }
+
+        $opdStatusCounts = (clone $opdQuery)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $opdDiterima = (int) $opdStatusCounts->get('diterima', 0);
+        $opdVerifikasi = (int) $opdStatusCounts->get('sudah_dikumpulkan', 0);
+        $opdBelum = (int) $opdStatusCounts->get('belum_dikumpulkan', 0);
+        $opdRevisi = (int) $opdStatusCounts->get('perlu_revisi', 0);
+        $opdTerlambat = (int) $opdStatusCounts->get('terlambat', 0);
+        $totalTugasOpdSemua = $opdDiterima + $opdVerifikasi + $opdBelum + $opdRevisi + $opdTerlambat;
+
+        $kepatuhanOpdRate = $totalTugasOpdSemua > 0
+            ? (int) round((($opdDiterima + $opdVerifikasi) / $totalTugasOpdSemua) * 100)
+            : 0;
+
+        $chartKepatuhanOpd = $this->buildDonutChart(
+            title: 'Kepatuhan Penugasan OPD',
+            subtitle: 'Distribusi status pengumpulan berkas perangkat daerah',
+            centerLabel: 'Kepatuhan',
+            rate: $kepatuhanOpdRate,
+            total: $totalTugasOpdSemua,
+            actionUrl: route('admin.tugas.index'),
+            rawItems: [
+                [
+                    'label' => 'Valid & Diterima',
+                    'count' => $opdDiterima,
+                    'color' => '#059669',
+                    'badge_class' => 'bg-emerald-500',
+                ],
+                [
+                    'label' => 'Menunggu Verifikasi',
+                    'count' => $opdVerifikasi,
+                    'color' => '#0284c7',
+                    'badge_class' => 'bg-sky-500',
+                ],
+                [
+                    'label' => 'Belum Mengumpulkan',
+                    'count' => $opdBelum,
+                    'color' => '#f59e0b',
+                    'badge_class' => 'bg-amber-500',
+                ],
+                [
+                    'label' => 'Perlu Perbaikan',
+                    'count' => $opdRevisi,
+                    'color' => '#ec4899',
+                    'badge_class' => 'bg-pink-500',
+                ],
+                [
+                    'label' => 'Lewat Batas Waktu',
+                    'count' => $opdTerlambat,
+                    'color' => '#f43f5e',
+                    'badge_class' => 'bg-rose-500',
+                ],
+            ]
+        );
+
+        // ===== BREAKDOWN KEPATUHAN ANGGOTA BIDANG (DONUT CHART) =====
+        $bidangPenerima = PenugasanPenerima::query()
+            ->select(['status_penugasan', 'status_laporan', 'status_konfirmasi'])
+            ->get();
+
+        $totalBidangSemua = $bidangPenerima->count();
+        $bidangSelesaiLapor = $bidangPenerima->where('status_penugasan', 'selesai')->where('status_laporan', 'sudah_dilaporkan')->count();
+        $bidangSelesaiBelumLapor = $bidangPenerima->where('status_penugasan', 'selesai')->where('status_laporan', '!=', 'sudah_dilaporkan')->count();
+        $bidangSedang = $bidangPenerima->where('status_penugasan', 'sedang_dikerjakan')->count();
+        $bidangBelum = $bidangPenerima->filter(function ($item) {
+            return (empty($item->status_penugasan) || $item->status_penugasan === 'belum_dikerjakan')
+                && $item->status_konfirmasi !== 'ditolak';
+        })->count();
+        $bidangDitolak = $bidangPenerima->where('status_konfirmasi', 'ditolak')->count();
+
+        $kepatuhanBidangRate = $totalBidangSemua > 0
+            ? (int) round(($bidangSelesaiLapor / $totalBidangSemua) * 100)
+            : 0;
+
+        $chartKepatuhanBidang = $this->buildDonutChart(
+            title: 'Kepatuhan Anggota Bidang',
+            subtitle: 'Progres kegiatan & laporan staf Bidang Ekop',
+            centerLabel: 'Kepatuhan',
+            rate: $kepatuhanBidangRate,
+            total: $totalBidangSemua,
+            actionUrl: route('admin.penugasan.index'),
+            rawItems: [
+                [
+                    'label' => 'Selesai & Dilaporkan',
+                    'count' => $bidangSelesaiLapor,
+                    'color' => '#059669',
+                    'badge_class' => 'bg-emerald-500',
+                ],
+                [
+                    'label' => 'Selesai (Belum Lapor)',
+                    'count' => $bidangSelesaiBelumLapor,
+                    'color' => '#0d9488',
+                    'badge_class' => 'bg-teal-500',
+                ],
+                [
+                    'label' => 'Sedang Dikerjakan',
+                    'count' => $bidangSedang,
+                    'color' => '#4f46e5',
+                    'badge_class' => 'bg-indigo-600',
+                ],
+                [
+                    'label' => 'Belum Dimulai',
+                    'count' => $bidangBelum,
+                    'color' => '#f59e0b',
+                    'badge_class' => 'bg-amber-500',
+                ],
+                [
+                    'label' => 'Berhalangan / Ditolak',
+                    'count' => $bidangDitolak,
+                    'color' => '#f43f5e',
+                    'badge_class' => 'bg-rose-500',
+                ],
+            ]
+        );
 
         // Tasks with completion stats
         $tugasQuery = Tugas::with([
@@ -192,7 +316,62 @@ class DashboardController extends Controller
             'recentLogs',
             'isPic',
             'handledOpdIds',
-            'calendarEvents'
+            'calendarEvents',
+            'chartKepatuhanOpd',
+            'chartKepatuhanBidang'
         ));
+    }
+
+    /**
+     * Build donut chart breakdown dataset.
+     *
+     * @param  array<int, array{label: string, count: int, color: string, badge_class: string}>  $rawItems
+     * @return array{
+     *     title: string,
+     *     subtitle: string,
+     *     rate: int,
+     *     total: int,
+     *     center_label: string,
+     *     action_url: string,
+     *     segments: array<int, array{label: string, count: int, percentage: int, color: string, dasharray: string, dashoffset: string, badge_class: string}>
+     * }
+     */
+    private function buildDonutChart(string $title, string $subtitle, string $centerLabel, int $rate, int $total, string $actionUrl, array $rawItems): array
+    {
+        $circumference = 2 * M_PI * 50;
+        $currentOffset = 0;
+        $segments = [];
+
+        $activeSegmentsCount = collect($rawItems)->where('count', '>', 0)->count();
+        $gap = $activeSegmentsCount > 1 ? 2.5 : 0;
+
+        foreach ($rawItems as $item) {
+            $count = $item['count'];
+            $pct = $total > 0 ? (int) round(($count / $total) * 100) : 0;
+            $arcLen = $total > 0 ? ($count / $total) * $circumference : 0;
+            $visibleLen = $count > 0 ? max(0.5, $arcLen - $gap) : 0;
+
+            $segments[] = [
+                'label' => $item['label'],
+                'count' => $count,
+                'percentage' => $pct,
+                'color' => $item['color'],
+                'badge_class' => $item['badge_class'],
+                'dasharray' => sprintf('%.2f %.2f', $visibleLen, $circumference - $visibleLen),
+                'dashoffset' => sprintf('%.2f', -$currentOffset),
+            ];
+
+            $currentOffset += $arcLen;
+        }
+
+        return [
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'rate' => $rate,
+            'total' => $total,
+            'center_label' => $centerLabel,
+            'action_url' => $actionUrl,
+            'segments' => $segments,
+        ];
     }
 }

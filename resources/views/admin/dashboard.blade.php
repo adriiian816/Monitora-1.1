@@ -3,7 +3,7 @@
 <div class="px-4 sm:px-6 md:px-8 py-3.5 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 shrink-0">
     {{-- Left: Title --}}
     <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center shadow-xs" style="background-color: #ECFDF5 !important; border: 1px solid #A7F3D0 !important; color: #059669 !important;">
             <span class="material-symbols-outlined text-[22px]">dashboard</span>
         </div>
         <div>
@@ -63,11 +63,7 @@
         </div>
         {{-- Quick Actions --}}
         @if(Auth::user()->isAdminOrSuperAdmin())
-            <a href="{{ route('admin.tugas.create') }}"
-               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[12px] font-bold shadow-sm hover:bg-[#043d2e] transition whitespace-nowrap">
-                <span class="material-symbols-outlined text-[16px]">add</span>
-                Tugas Baru
-            </a>
+            <a href="{{ route('admin.tugas.create') }}" class="btn-action-emerald flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-bold shadow-xs hover:shadow transition whitespace-nowrap" style="background-color: #059669 !important; color: #FFFFFF !important;"><span class="material-symbols-outlined text-[16px]">add</span><span>Tugas Baru</span></a>
         @endif
     </div>
 </div>
@@ -116,7 +112,7 @@
                     <div class="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0 flex items-center justify-center">
                         <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 130 130">
                             {{-- Base Track --}}
-                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#f1f5f9" stroke-width="16" />
+                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#E5E7EB" stroke-width="16" />
 
                             @if($chartKepatuhanOpd['total'] > 0)
                                 @foreach($chartKepatuhanOpd['segments'] as $seg)
@@ -190,7 +186,7 @@
                     <div class="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0 flex items-center justify-center">
                         <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 130 130">
                             {{-- Base Track --}}
-                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#f1f5f9" stroke-width="16" />
+                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#E5E7EB" stroke-width="16" />
 
                             @if($chartKepatuhanBidang['total'] > 0)
                                 @foreach($chartKepatuhanBidang['segments'] as $seg)
@@ -254,7 +250,7 @@
                            value="{{ request('search') }}"
                            placeholder="Cari nama tugas..."
                            class="py-1.5 pr-3 pl-1 text-[12px] bg-transparent border-0 focus:ring-0 focus:outline-none w-36">
-                    <button type="submit" class="px-3 py-1.5 bg-[#059669] text-white text-[11px] font-bold hover:bg-[#047857] transition">
+                    <button type="submit" class="px-3.5 py-1.5 text-white text-[11px] font-bold transition rounded-r-xl" style="background-color: #059669 !important; color: #FFFFFF !important;">
                         Cari
                     </button>
                 </div>
