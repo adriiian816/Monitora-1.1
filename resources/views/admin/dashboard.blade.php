@@ -1,6 +1,6 @@
 <x-app-layout pageTitle="Dashboard Monitoring">
 {{-- ===== TOP CONTROL BAR ===== --}}
-<div class="px-6 md:px-8 py-4 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0">
+<div class="px-4 sm:px-6 md:px-8 py-3.5 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 shrink-0">
     {{-- Left: Title --}}
     <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
@@ -18,43 +18,43 @@
     </div>
 
     {{-- Right: Exec Stat Ticker --}}
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 xl:pb-0">
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+    <div class="flex items-center flex-wrap gap-2">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total OPD</span>
                 <span class="text-base font-extrabold text-slate-900 leading-tight">{{ $totalOpd }}</span>
             </div>
             <span class="text-[10px] text-[#059669] font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">Mitra Aktif</span>
         </div>
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Tugas Aktif</span>
                 <span class="text-base font-extrabold text-slate-900 leading-tight">{{ $totalTugasAktif }}</span>
             </div>
             <span class="text-[10px] text-slate-400 font-medium">Kegiatan</span>
         </div>
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Belum Kumpul</span>
                 <span class="text-base font-extrabold text-amber-600 leading-tight">{{ $totalBelumKumpul }}</span>
             </div>
             <span class="text-[10px] text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">Menunggu</span>
         </div>
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Verifikasi</span>
                 <span class="text-base font-extrabold text-teal-700 leading-tight">{{ $totalMenungguVerifikasi }}</span>
             </div>
             <span class="text-[10px] text-teal-700 font-semibold bg-teal-50 px-1.5 py-0.5 rounded">Telaah Kabid</span>
         </div>
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Diterima</span>
                 <span class="text-base font-extrabold text-emerald-600 leading-tight">{{ $totalDiterima }}</span>
             </div>
             <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">Valid &amp; Final</span>
         </div>
-        <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-rose-600">Terlambat</span>
                 <span class="text-base font-extrabold text-rose-600 leading-tight">{{ $totalTerlambat }}</span>
@@ -64,7 +64,7 @@
         {{-- Quick Actions --}}
         @if(Auth::user()->isAdminOrSuperAdmin())
             <a href="{{ route('admin.tugas.create') }}"
-               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[12px] font-bold shadow-sm hover:bg-[#043d2e] transition whitespace-nowrap ml-1">
+               class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#064e3b] text-white text-[12px] font-bold shadow-sm hover:bg-[#043d2e] transition whitespace-nowrap">
                 <span class="material-symbols-outlined text-[16px]">add</span>
                 Tugas Baru
             </a>
@@ -76,7 +76,7 @@
 <div class="flex-1 flex flex-col lg:flex-row min-w-0">
 
     {{-- ===== LEFT PANEL: Task Monitoring (65%) ===== --}}
-    <section class="flex-1 lg:w-[65%] p-6 md:p-8 flex flex-col gap-4">
+    <section class="flex-1 lg:w-[65%] p-4 sm:p-5 lg:p-6 flex flex-col gap-4">
 
         {{-- OPD Warning (PIC tanpa OPD) --}}
         @if($isPic && count($handledOpdIds) === 0)
@@ -264,10 +264,10 @@
             </div>
 
             {{-- 2-Column Calendar & Agenda Layout --}}
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-5">
                 
                 {{-- Left: Calendar Grid (7 Cols on desktop) --}}
-                <div class="lg:col-span-7 flex flex-col gap-2">
+                <div class="xl:col-span-7 flex flex-col gap-2">
                     {{-- Weekday Headers --}}
                     <div class="grid grid-cols-7 gap-1 text-center">
                         <span class="text-[10px] font-bold text-slate-400 py-1 uppercase">Sen</span>
@@ -346,7 +346,7 @@
                 </div>
 
                 {{-- Right: Selected Date Agenda Details (5 Cols on desktop) --}}
-                <div class="lg:col-span-5 bg-[#f8fbf9] rounded-2xl p-4 border border-emerald-100/70 flex flex-col gap-3">
+                <div class="xl:col-span-5 bg-[#f8fbf9] rounded-2xl p-4 border border-emerald-100/70 flex flex-col gap-3">
                     <div class="flex items-center justify-between pb-2 border-b border-emerald-100">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Agenda Terjadwal</span>
@@ -401,7 +401,7 @@
     </section>
 
     {{-- ===== RIGHT PANEL: Quick Access (35%) ===== --}}
-    <aside class="w-full lg:w-[35%] shrink-0 border-t lg:border-t-0 lg:border-l border-emerald-100 bg-[#fcfdfc] p-6 flex flex-col gap-5">
+    <aside class="w-full lg:w-[35%] shrink-0 border-t lg:border-t-0 lg:border-l border-emerald-100 bg-[#fcfdfc] p-4 sm:p-5 lg:p-6 flex flex-col gap-5">
 
         {{-- Submissions Awaiting Verification --}}
         <div>

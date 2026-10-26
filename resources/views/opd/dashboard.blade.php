@@ -1,6 +1,6 @@
 <x-app-layout pageTitle="Dashboard OPD">
 {{-- ===== TOP CONTROL BAR ===== --}}
-<div class="px-6 md:px-8 py-4 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col xl:flex-row xl:items-center justify-between gap-3 shrink-0">
+<div class="px-4 sm:px-6 md:px-8 py-3.5 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 shrink-0">
     {{-- Left: OPD Identity --}}
     <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-white text-[#059669] flex items-center justify-center border border-emerald-200 shadow-xs">
@@ -23,7 +23,7 @@
     </div>
 
     {{-- Right: Exec Stat Ticker --}}
-    <div class="flex items-center gap-2 overflow-x-auto pb-1 xl:pb-0">
+    <div class="flex items-center flex-wrap gap-2">
         <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total Tugas</span>
@@ -71,7 +71,7 @@
 <div class="flex-1 flex flex-col lg:flex-row min-w-0">
 
     {{-- ===== LEFT PANEL: Urgent Tasks (65%) ===== --}}
-    <section class="flex-1 lg:w-[65%] p-6 md:p-8 flex flex-col gap-6">
+    <section class="flex-1 lg:w-[65%] p-4 sm:p-5 lg:p-6 flex flex-col gap-6">
 
         {{-- Welcome Banner Card --}}
         <div class="p-6 rounded-3xl bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857] text-white shadow-xs border border-emerald-700/40 relative overflow-hidden">
@@ -195,7 +195,7 @@
     </section>
 
     {{-- ===== RIGHT PANEL: WhatsApp Logs & Recent Activity (35%) ===== --}}
-    <aside class="w-full lg:w-[35%] shrink-0 border-t lg:border-t-0 lg:border-l border-emerald-100 bg-[#fcfdfc] p-6 flex flex-col gap-6">
+    <aside class="w-full lg:w-[35%] shrink-0 border-t lg:border-t-0 lg:border-l border-emerald-100 bg-[#fcfdfc] p-4 sm:p-5 lg:p-6 flex flex-col gap-6">
 
         {{-- WhatsApp Activity Section --}}
         <div>
