@@ -89,6 +89,157 @@
             </div>
         @endif
 
+        {{-- ===== COMPLIANCE BREAKDOWN CHARTS (OPD & ANGGOTA BIDANG) ===== --}}
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {{-- Card 1: Kepatuhan OPD --}}
+            <div class="bg-white rounded-3xl p-5 border border-emerald-100/80 shadow-xs flex flex-col justify-between gap-4 hover:border-emerald-200 transition-all hover:shadow-sm">
+                {{-- Card Header --}}
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[18px] text-[#059669]">domain_verification</span>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 truncate">
+                                {{ $chartKepatuhanOpd['title'] }}
+                            </h3>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ $chartKepatuhanOpd['subtitle'] }}</p>
+                    </div>
+                    <a href="{{ $chartKepatuhanOpd['action_url'] }}" 
+                       class="text-[10px] font-bold text-[#059669] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full transition shrink-0">
+                        {{ $chartKepatuhanOpd['total'] }} Tugas OPD
+                    </a>
+                </div>
+
+                {{-- Chart Content --}}
+                <div class="flex items-center gap-4 sm:gap-6">
+                    {{-- Donut SVG --}}
+                    <div class="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0 flex items-center justify-center">
+                        <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 130 130">
+                            {{-- Base Track --}}
+                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#f1f5f9" stroke-width="16" />
+
+                            @if($chartKepatuhanOpd['total'] > 0)
+                                @foreach($chartKepatuhanOpd['segments'] as $seg)
+                                    @if($seg['count'] > 0)
+                                        <circle cx="65" cy="65" r="50" fill="transparent"
+                                                stroke="{{ $seg['color'] }}"
+                                                stroke-width="16"
+                                                stroke-dasharray="{{ $seg['dasharray'] }}"
+                                                stroke-dashoffset="{{ $seg['dashoffset'] }}"
+                                                class="transition-all duration-700 ease-out" />
+                                    @endif
+                                @endforeach
+                            @else
+                                <circle cx="65" cy="65" r="50" fill="transparent" stroke="#e2e8f0" stroke-width="16" stroke-dasharray="3 3" />
+                            @endif
+                        </svg>
+
+                        {{-- Center Text --}}
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                            <span class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
+                                {{ $chartKepatuhanOpd['rate'] }}%
+                            </span>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mt-1">
+                                {{ $chartKepatuhanOpd['center_label'] }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Legend List --}}
+                    <div class="flex-1 flex flex-col justify-center gap-2 min-w-0">
+                        @foreach($chartKepatuhanOpd['segments'] as $seg)
+                            <div class="flex items-center justify-between gap-1.5 text-xs">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ $seg['color'] }}"></span>
+                                    <span class="font-medium text-slate-600 truncate text-[11px] sm:text-xs" title="{{ $seg['label'] }}">
+                                        {{ $seg['label'] }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0 font-bold">
+                                    <span class="text-slate-400 text-[10px] sm:text-[11px] font-normal">({{ $seg['count'] }})</span>
+                                    <span class="text-slate-800 text-xs w-8 text-right">{{ $seg['percentage'] }}%</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            {{-- Card 2: Kepatuhan Anggota Bidang --}}
+            <div class="bg-white rounded-3xl p-5 border border-emerald-100/80 shadow-xs flex flex-col justify-between gap-4 hover:border-emerald-200 transition-all hover:shadow-sm">
+                {{-- Card Header --}}
+                <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[18px] text-indigo-600">groups</span>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 truncate">
+                                {{ $chartKepatuhanBidang['title'] }}
+                            </h3>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ $chartKepatuhanBidang['subtitle'] }}</p>
+                    </div>
+                    <a href="{{ $chartKepatuhanBidang['action_url'] }}" 
+                       class="text-[10px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-0.5 rounded-full transition shrink-0">
+                        {{ $chartKepatuhanBidang['total'] }} Kegiatan
+                    </a>
+                </div>
+
+                {{-- Chart Content --}}
+                <div class="flex items-center gap-4 sm:gap-6">
+                    {{-- Donut SVG --}}
+                    <div class="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0 flex items-center justify-center">
+                        <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 130 130">
+                            {{-- Base Track --}}
+                            <circle cx="65" cy="65" r="50" fill="transparent" stroke="#f1f5f9" stroke-width="16" />
+
+                            @if($chartKepatuhanBidang['total'] > 0)
+                                @foreach($chartKepatuhanBidang['segments'] as $seg)
+                                    @if($seg['count'] > 0)
+                                        <circle cx="65" cy="65" r="50" fill="transparent"
+                                                stroke="{{ $seg['color'] }}"
+                                                stroke-width="16"
+                                                stroke-dasharray="{{ $seg['dasharray'] }}"
+                                                stroke-dashoffset="{{ $seg['dashoffset'] }}"
+                                                class="transition-all duration-700 ease-out" />
+                                    @endif
+                                @endforeach
+                            @else
+                                <circle cx="65" cy="65" r="50" fill="transparent" stroke="#e2e8f0" stroke-width="16" stroke-dasharray="3 3" />
+                            @endif
+                        </svg>
+
+                        {{-- Center Text --}}
+                        <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                            <span class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">
+                                {{ $chartKepatuhanBidang['rate'] }}%
+                            </span>
+                            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mt-1">
+                                {{ $chartKepatuhanBidang['center_label'] }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Legend List --}}
+                    <div class="flex-1 flex flex-col justify-center gap-2 min-w-0">
+                        @foreach($chartKepatuhanBidang['segments'] as $seg)
+                            <div class="flex items-center justify-between gap-1.5 text-xs">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ $seg['color'] }}"></span>
+                                    <span class="font-medium text-slate-600 truncate text-[11px] sm:text-xs" title="{{ $seg['label'] }}">
+                                        {{ $seg['label'] }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0 font-bold">
+                                    <span class="text-slate-400 text-[10px] sm:text-[11px] font-normal">({{ $seg['count'] }})</span>
+                                    <span class="text-slate-800 text-xs w-8 text-right">{{ $seg['percentage'] }}%</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Workspace Header --}}
         <div class="flex items-center justify-between flex-wrap gap-2">
             <div>
