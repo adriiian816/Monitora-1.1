@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LoginLogController as AdminLoginLogController;
 use App\Http\Controllers\Admin\OpdController as AdminOpdController;
 use App\Http\Controllers\Admin\PenugasanController as AdminPenugasanController;
+use App\Http\Controllers\Admin\RekapitulasiController as AdminRekapitulasiController;
 use App\Http\Controllers\Admin\SubmissionController as AdminSubmissionController;
 use App\Http\Controllers\Admin\TugasController as AdminTugasController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -84,8 +85,12 @@ Route::middleware(['auth', 'role:anggota_bidang'])->prefix('bidang')->name('bida
     Route::get('/dashboard', [BidangDashboardController::class, 'index'])->name('dashboard');
 });
 
-// Routes EXCLUSIVE to Super Admin (OPD Data Master & User Accounts Management)
+// Routes EXCLUSIVE to Super Admin (OPD Data Master, User Accounts & Rekapitulasi)
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Rekapitulasi & Cetak Kinerja (1 Bulan Terakhir)
+    Route::get('/rekapitulasi/opd', [AdminRekapitulasiController::class, 'opd'])->name('rekapitulasi.opd');
+    Route::get('/rekapitulasi/bidang', [AdminRekapitulasiController::class, 'bidang'])->name('rekapitulasi.bidang');
+
     // OPD Management
     Route::post('/opd/bulk-delete', [AdminOpdController::class, 'bulkDestroy'])->name('opd.bulk-delete');
     Route::resource('opd', AdminOpdController::class)->except(['show']);

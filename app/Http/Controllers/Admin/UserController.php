@@ -49,13 +49,16 @@ class UserController extends Controller
         $totalAnggotaBidang = User::where('role', 'anggota_bidang')->count();
         $totalOpd = User::where('role', 'opd')->count();
 
+        $opds = Opd::active()->orderBy('nama_opd')->get();
+
         return view('admin.users.index', compact(
             'users',
             'totalUsers',
             'totalSuperAdmin',
             'totalAdmin',
             'totalAnggotaBidang',
-            'totalOpd'
+            'totalOpd',
+            'opds'
         ));
     }
 

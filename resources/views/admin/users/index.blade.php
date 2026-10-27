@@ -7,9 +7,12 @@
       x-data="{ 
         selectedUsers: [], 
         availableUserIds: {{ json_encode($selectableUserIds) }},
+        userList: {{ json_encode($users->items()) }},
         showDeleteModal: false, 
-        showEditModal: false,
-        userToEditId: '',
+        showCreateUserModal: false,
+        showEditUserModal: false,
+        newUserRole: 'admin',
+        editUser: { id: '', name: '', email: '', no_hp: '', role: 'admin', opd_id: '', bidang: '', handled_opd_ids: [] },
 
         selectAll() {
             this.selectedUsers = [...this.availableUserIds];
@@ -31,25 +34,47 @@
             return this.availableUserIds.length > 0 && this.availableUserIds.every(id => this.selectedUsers.map(Number).includes(Number(id)));
         },
 
+        openCreateUserModal() {
+            this.showCreateUserModal = true;
+        },
+
+        openEditUserModal(user) {
+            this.editUser = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                no_hp: user.no_hp || '',
+                role: user.role,
+                opd_id: user.opd_id || '',
+                bidang: user.bidang || '',
+                handled_opd_ids: (user.handled_opds || []).map(o => o.id)
+            };
+            this.showEditUserModal = true;
+        },
+
         handleEdit() {
-            if (this.selectedUsers.length === 1) {
-                window.location.href = '/admin/users/' + this.selectedUsers[0] + '/edit';
-            } else {
-                if (this.selectedUsers.length > 1) {
-                    this.userToEditId = this.selectedUsers[0];
-                } else if (this.availableUserIds.length > 0) {
-                    this.userToEditId = this.availableUserIds[0];
+            let targetId = null;
+            if (this.selectedUsers.length > 0) {
+                targetId = this.selectedUsers[0];
+            } else if (this.userList.length > 0) {
+                targetId = this.userList[0].id;
+            }
+
+            if (targetId) {
+                const found = this.userList.find(u => Number(u.id) === Number(targetId));
+                if (found) {
+                    this.openEditUserModal(found);
                 }
-                this.showEditModal = true;
+            } else {
+                alert('Tidak ada data akun yang dapat diedit.');
             }
         },
 
-        proceedEdit() {
-            if (!this.userToEditId) {
-                alert('Silakan pilih akun yang ingin diedit.');
-                return;
+        selectUserToEdit(id) {
+            const found = this.userList.find(u => Number(u.id) === Number(id));
+            if (found) {
+                this.openEditUserModal(found);
             }
-            window.location.href = '/admin/users/' + this.userToEditId + '/edit';
         },
 
         handleDelete() {
@@ -99,12 +124,13 @@
                           class="px-2 py-0.5 rounded-full text-[10px] bg-rose-200 text-rose-800 font-extrabold"></span>
                 </button>
 
-                <!-- Tambah Pengguna Baru -->
-                <a href="{{ route('admin.users.create') }}" 
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full">
+                <!-- Tambah Pengguna Baru (Popup Modal) -->
+                <button type="button" 
+                        @click="openCreateUserModal()" 
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">person_add</span>
                     <span>+ Tambah Pengguna</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -126,7 +152,7 @@
         {{-- ===== SUMMARY KPI CARDS ===== --}}
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
             {{-- Card 1: Total Akun --}}
-            <div class="bg-white p-4 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-4 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
                     <span class="material-symbols-outlined text-[20px]">group</span>
                 </div>
@@ -138,7 +164,7 @@
             </div>
 
             {{-- Card 2: Super Admin --}}
-            <div class="bg-white p-4 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-4 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center shrink-0 shadow-2xs">
                     <span class="material-symbols-outlined text-[20px]">shield_person</span>
                 </div>
@@ -150,7 +176,7 @@
             </div>
 
             {{-- Card 3: PIC --}}
-            <div class="bg-white p-4 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-4 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200 flex items-center justify-center shrink-0 shadow-2xs">
                     <span class="material-symbols-outlined text-[20px]">assignment_ind</span>
                 </div>
@@ -162,7 +188,7 @@
             </div>
 
             {{-- Card 4: Anggota Bidang --}}
-            <div class="bg-white p-4 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-4 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center shrink-0 shadow-2xs">
                     <span class="material-symbols-outlined text-[20px]">badge</span>
                 </div>
@@ -274,7 +300,7 @@
         </div>
 
         {{-- ===== TABEL PENGGUNA ===== --}}
-        <div class="bg-white rounded-3xl border border-emerald-100/80 shadow-xs overflow-hidden">
+        <div class="bg-white rounded-3xl border border-emerald-200 shadow-xs overflow-hidden border-t-4 border-t-[#059669]">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-[#f7faf8] border-b border-emerald-100/70 text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -323,11 +349,12 @@
                                         </div>
                                         <div class="min-w-0">
                                             <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                                <a href="{{ route('admin.users.edit', $user) }}" 
-                                                   class="truncate max-w-[200px] sm:max-w-xs group-hover:text-[#059669] hover:underline transition" 
-                                                   title="Klik untuk mengedit akun: {{ $user->name }}">
+                                                <button type="button" 
+                                                        @click="openEditUserModal({{ json_encode($user->loadMissing('handledOpds')->only(['id', 'name', 'email', 'no_hp', 'role', 'opd_id', 'bidang', 'handled_opds'])) }})" 
+                                                        class="truncate max-w-[200px] sm:max-w-xs group-hover:text-[#059669] hover:underline transition text-left font-bold cursor-pointer" 
+                                                        title="Klik untuk mengedit akun: {{ $user->name }}">
                                                     {{ $user->name }}
-                                                </a>
+                                                </button>
                                                 @if($isSelf)
                                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
                                                         Anda
@@ -546,50 +573,362 @@
             </div>
         </div>
 
-        {{-- ===== MODAL 2: Pilih Akun untuk Diedit ===== --}}
-        <div x-show="showEditModal" 
+        {{-- ===== MODAL CREATE PENGGUNA (Popup Tambah Pengguna Baru) ===== --}}
+        <div x-show="showCreateUserModal" 
+             x-cloak
              style="display: none;" 
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div @click.away="showEditModal = false" 
-                 class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
-                <div class="flex items-center gap-3 text-[#064e3b] mb-4">
-                    <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
-                        <span class="material-symbols-outlined text-[#059669] text-[26px]">manage_accounts</span>
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95">
+            <div @click.away="showCreateUserModal = false" 
+                 class="bg-white rounded-[28px] max-w-lg w-full shadow-2xl border border-emerald-100 relative flex flex-col max-h-[88vh] overflow-hidden">
+                
+                <!-- Modal Header (Fixed at top with rounded corners) -->
+                <div class="flex items-start justify-between gap-3 p-5 sm:px-7 sm:pt-6 sm:pb-4 border-b border-emerald-100/70 shrink-0 bg-white">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                            <span class="material-symbols-outlined text-[24px]">person_add</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 tracking-tight leading-snug">Tambah Pengguna Baru</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Daftarkan akun Admin, Anggota Bidang, atau Staf OPD</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900">Pilih Akun yang Ingin Diedit</h3>
-                        <p class="text-xs text-slate-500">Pilih satu akun pengguna untuk membuka formulir edit</p>
-                    </div>
-                </div>
-
-                <div class="mb-6 space-y-2">
-                    <label for="edit_user_select" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Daftar Pengguna
-                    </label>
-                    <select id="edit_user_select" 
-                            x-model="userToEditId" 
-                            class="w-full text-sm rounded-2xl border border-slate-200 bg-[#f0f5f2] p-3 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/20 font-medium">
-                        <option value="">-- Pilih Akun yang Ingin Diedit --</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}">
-                                {{ $user->name }} ({{ $user->role_label }}) - {{ $user->email }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" 
-                            @click="showEditModal = false" 
-                            class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
-                        Batal
-                    </button>
-                    <button type="button" 
-                            @click="proceedEdit()" 
-                            class="px-6 py-2.5 rounded-full bg-[#059669] text-white font-bold text-xs hover:bg-[#047857] shadow-sm transition cursor-pointer">
-                        Buka Formulir Edit
+                            @click="showCreateUserModal = false" 
+                            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition shrink-0 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
                     </button>
                 </div>
+
+                <!-- Modal Form (Scrollable body inside unclipped rounded card) -->
+                <form method="POST" action="{{ route('admin.users.store') }}" class="flex flex-col flex-1 min-h-0">
+                    @csrf
+
+                    <div class="p-5 sm:px-7 overflow-y-auto flex-1 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Nama Lengkap <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="name" required placeholder="Contoh: Ahmad Yani, S.T." 
+                                       class="w-full text-sm font-semibold rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Email Login <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="email" name="email" required placeholder="email@malutprov.go.id" 
+                                       class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Nomor WhatsApp / HP
+                                </label>
+                                <input type="text" name="no_hp" placeholder="081234567890" 
+                                       class="w-full text-sm font-mono rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Bidang Internal Bappeda
+                                </label>
+                                <select name="bidang" 
+                                        class="w-full text-sm rounded-xl border border-transparent bg-[#f0f5f2] focus:bg-white focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 font-medium transition-all">
+                                    <option value="">-- Bukan Internal / Umum --</option>
+                                    <option value="ekop">Bidang Perekonomian &amp; Perdagangan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Role Selector (Cards Style) -->
+                        <div class="pt-1">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                Pilih Peran Akun (Role) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="newUserRole === 'admin' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="admin" x-model="newUserRole" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">PIC Bappeda</div>
+                                        <div class="text-[10px] text-slate-500">Admin pengawas</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="newUserRole === 'opd' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="opd" x-model="newUserRole" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">Staf OPD</div>
+                                        <div class="text-[10px] text-slate-500">Pengunggah berkas</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="newUserRole === 'super_admin' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="super_admin" x-model="newUserRole" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">Super Admin</div>
+                                        <div class="text-[10px] text-slate-500">Akses penuh sistem</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic OPD Dropdown for Staf OPD -->
+                        <div x-show="newUserRole === 'opd'" x-transition class="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Pilih Instansi OPD <span class="text-rose-500">*</span>
+                            </label>
+                            <select name="opd_id" class="w-full text-sm rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-medium">
+                                <option value="">-- Pilih Instansi OPD Terdaftar --</option>
+                                @foreach($opds ?? [] as $opdItem)
+                                    <option value="{{ $opdItem->id }}">[{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Handled OPDs for Admin PIC -->
+                        <div x-show="newUserRole === 'admin'" x-transition class="p-3 rounded-2xl bg-teal-50/60 border border-teal-200">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                OPD yang Dikelola (Opsional)
+                            </label>
+                            <div class="max-h-28 overflow-y-auto space-y-1 bg-white p-2 rounded-xl border border-slate-200 text-xs">
+                                @foreach($opds ?? [] as $opdItem)
+                                    <label class="flex items-center gap-2 hover:bg-slate-50 p-1 rounded cursor-pointer">
+                                        <input type="checkbox" name="handled_opd_ids[]" value="{{ $opdItem->id }}" class="rounded text-[#059669] focus:ring-[#059669]">
+                                        <span class="text-slate-700">[{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Password Fields -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Password <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="password" name="password" required placeholder="Min. 8 karakter" 
+                                       class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Ulangi Password <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="password" name="password_confirmation" required placeholder="Ulangi password" 
+                                       class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Actions (Fixed at bottom with rounded corners) -->
+                    <div class="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-100 shrink-0 bg-[#FAFCFB]">
+                        <button type="button" 
+                                @click="showCreateUserModal = false" 
+                                class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+                            <span class="material-symbols-outlined text-[17px]">save</span>
+                            <span>Simpan Pengguna</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- ===== MODAL EDIT PENGGUNA (Popup Edit Data Pengguna) ===== --}}
+        <div x-show="showEditUserModal" 
+             x-cloak
+             style="display: none;" 
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95">
+            <div @click.away="showEditUserModal = false" 
+                 class="bg-white rounded-[28px] max-w-lg w-full shadow-2xl border border-emerald-100 relative flex flex-col max-h-[88vh] overflow-hidden">
+                
+                <!-- Modal Header (Fixed at top with rounded corners) -->
+                <div class="flex items-start justify-between gap-3 p-5 sm:px-7 sm:pt-6 sm:pb-4 border-b border-emerald-100/70 shrink-0 bg-white">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                            <span class="material-symbols-outlined text-[24px]">manage_accounts</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 tracking-tight leading-snug">Edit Data Pengguna</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Perbarui informasi akun, peran, dan hak akses</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            @click="showEditUserModal = false" 
+                            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition shrink-0 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
+
+                <!-- Modal Form (Scrollable body inside unclipped rounded card) -->
+                <form method="POST" :action="'/admin/users/' + editUser.id" class="flex flex-col flex-1 min-h-0">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="p-5 sm:px-7 overflow-y-auto flex-1 space-y-4">
+                        <!-- Switch User Selector -->
+                        <div x-show="userList.length > 1" class="pb-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Pilih Akun Lain Untuk Diedit:
+                            </label>
+                            <select @change="selectUserToEdit($event.target.value)" 
+                                    :value="editUser.id"
+                                    class="w-full text-xs rounded-xl border border-slate-200 bg-[#f0f5f2] px-3 py-2 font-medium">
+                                <template x-for="item in userList" :key="item.id">
+                                    <option :value="item.id" :selected="Number(item.id) === Number(editUser.id)" x-text="item.name + ' (' + (item.role_label || item.role) + ') - ' + item.email"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Nama Lengkap <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="text" name="name" x-model="editUser.name" required 
+                                       class="w-full text-sm font-semibold rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Email Login <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="email" name="email" x-model="editUser.email" required 
+                                       class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Nomor WhatsApp / HP
+                                </label>
+                                <input type="text" name="no_hp" x-model="editUser.no_hp" 
+                                       class="w-full text-sm font-mono rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                    Bidang Internal Bappeda
+                                </label>
+                                <select name="bidang" x-model="editUser.bidang"
+                                        class="w-full text-sm rounded-xl border border-transparent bg-[#f0f5f2] focus:bg-white focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 font-medium transition-all">
+                                    <option value="">-- Bukan Internal / Umum --</option>
+                                    <option value="ekop">Bidang Perekonomian &amp; Perdagangan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Role Selector -->
+                        <div class="pt-1">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                Peran Akun (Role) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="editUser.role === 'admin' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="admin" x-model="editUser.role" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">PIC Bappeda</div>
+                                        <div class="text-[10px] text-slate-500">Admin pengawas</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="editUser.role === 'opd' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="opd" x-model="editUser.role" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">Staf OPD</div>
+                                        <div class="text-[10px] text-slate-500">Pengunggah berkas</div>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-2 p-2.5 rounded-2xl border cursor-pointer transition-all"
+                                       :class="editUser.role === 'super_admin' ? 'bg-emerald-50/70 border-[#059669] ring-2 ring-[#059669]/20' : 'bg-[#f0f5f2] border-transparent hover:border-slate-300'">
+                                    <input type="radio" name="role" value="super_admin" x-model="editUser.role" class="text-[#059669] focus:ring-[#059669]">
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">Super Admin</div>
+                                        <div class="text-[10px] text-slate-500">Akses penuh sistem</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic OPD Dropdown for Staf OPD -->
+                        <div x-show="editUser.role === 'opd'" x-transition class="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Instansi OPD Terhubung <span class="text-rose-500">*</span>
+                            </label>
+                            <select name="opd_id" x-model="editUser.opd_id" class="w-full text-sm rounded-xl border border-slate-200 bg-white px-3.5 py-2 font-medium">
+                                <option value="">-- Pilih Instansi OPD --</option>
+                                @foreach($opds ?? [] as $opdItem)
+                                    <option value="{{ $opdItem->id }}">[{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Dynamic Handled OPDs for Admin PIC -->
+                        <div x-show="editUser.role === 'admin'" x-transition class="p-3 rounded-2xl bg-teal-50/60 border border-teal-200">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                OPD yang Dikelola (Opsional)
+                            </label>
+                            <div class="max-h-28 overflow-y-auto space-y-1 bg-white p-2 rounded-xl border border-slate-200 text-xs">
+                                @foreach($opds ?? [] as $opdItem)
+                                    <label class="flex items-center gap-2 hover:bg-slate-50 p-1 rounded cursor-pointer">
+                                        <input type="checkbox" name="handled_opd_ids[]" value="{{ $opdItem->id }}" 
+                                               :checked="(editUser.handled_opd_ids || []).includes({{ $opdItem->id }})"
+                                               class="rounded text-[#059669] focus:ring-[#059669]">
+                                        <span class="text-slate-700">[{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Optional Password Fields for Edit -->
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                            <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                Ubah Kata Sandi (Kosongkan jika tidak ingin mengubah)
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <input type="password" name="password" placeholder="Password baru (opsional)" 
+                                       class="w-full text-xs rounded-xl bg-white border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                                <input type="password" name="password_confirmation" placeholder="Ulangi password baru" 
+                                       class="w-full text-xs rounded-xl bg-white border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Actions (Fixed at bottom with rounded corners) -->
+                    <div class="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-slate-100 shrink-0 bg-[#FAFCFB]">
+                        <button type="button" 
+                                @click="showEditUserModal = false" 
+                                class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+                            <span class="material-symbols-outlined text-[17px]">save</span>
+                            <span>Perbarui Pengguna</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

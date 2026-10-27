@@ -29,7 +29,7 @@
                 --zen-muted: #A3B8AD;
                 --emerald-primary: #059669;
                 --emerald-hover: #047857;
-                --app-canvas: #F4F7F5;
+                --app-canvas: #EDF3EE;
                 --card-bg: #FFFFFF;
                 --card-border: #E2E8F0;
                 --text-heading: #0F172A;
@@ -368,6 +368,29 @@
                                 <span class="material-symbols-outlined text-[19px]">group</span>
                                 <span>Kelola Pengguna</span>
                             </a>
+
+                            <div class="nav-group-title px-3 pt-3 pb-1 flex items-center justify-between">
+                                <span>// Cetak Rekapitulasi</span>
+                                <span class="text-[8px] font-extrabold text-[#4ADE80] bg-[#4ADE80]/15 border border-[#4ADE80]/30 px-1.5 py-0.2 rounded font-mono-tag">1 BULAN</span>
+                            </div>
+                            <a href="{{ route('admin.rekapitulasi.opd') }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] transition-all nav-link-idle group"
+                               title="Buka Cetak Rekapitulasi Kinerja OPD (1 Bulan Terakhir) di Tab Browser Baru">
+                                <span class="material-symbols-outlined text-[19px] text-[#4ADE80] group-hover:scale-110 transition-transform">print</span>
+                                <span class="flex-1 truncate">Rekap Kinerja OPD</span>
+                                <span class="material-symbols-outlined text-[13px] text-[#A3B8AD] opacity-70 group-hover:opacity-100 group-hover:text-white group-hover:translate-x-0.5 transition-all">open_in_new</span>
+                            </a>
+                            <a href="{{ route('admin.rekapitulasi.bidang') }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] transition-all nav-link-idle group"
+                               title="Buka Cetak Rekapitulasi Kinerja Anggota Bidang (1 Bulan Terakhir) di Tab Browser Baru">
+                                <span class="material-symbols-outlined text-[19px] text-[#4ADE80] group-hover:scale-110 transition-transform">assignment_turned_in</span>
+                                <span class="flex-1 truncate">Rekap Kinerja Bidang</span>
+                                <span class="material-symbols-outlined text-[13px] text-[#A3B8AD] opacity-70 group-hover:opacity-100 group-hover:text-white group-hover:translate-x-0.5 transition-all">open_in_new</span>
+                            </a>
                         @endif
 
                         <div class="nav-group-title px-3 pt-3 pb-1">
@@ -533,7 +556,7 @@
                 <div class="flex-1 max-w-xl mx-4 hidden md:block">
                     <div class="relative w-full">
                         <span class="material-symbols-outlined absolute left-3.5 top-2.5 text-[18px] text-slate-400">search</span>
-                        <input class="w-full pl-10 pr-4 py-2 text-[12px] bg-[#F4F7F5] hover:bg-[#EBF1ED] border border-transparent focus:border-[#059669] rounded-full text-[#0F172A] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#059669]/20 focus:bg-white transition-all"
+                        <input class="w-full pl-10 pr-4 py-2 text-[12px] bg-[#EDF3EE] hover:bg-[#EBF1ED] border border-transparent focus:border-[#059669] rounded-full text-[#0F172A] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#059669]/20 focus:bg-white transition-all"
                                placeholder="Cari program, kegiatan, OPD, atau berkas..."
                                type="text">
                     </div>
@@ -597,7 +620,7 @@
             </div>
 
             <!-- Page Content Slot: Fresh Canvas #F4F7F5 -->
-            <main class="flex-1 overflow-y-auto min-h-0 bg-[#F4F7F5]">
+            <main class="flex-1 overflow-y-auto min-h-0 bg-[#EDF3EE]">
                 {{ $slot }}
             </main>
 

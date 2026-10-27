@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920">
+<title>MONITORA PROTOTYPE — Motion Graphic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset ── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── Canvas: 1080×1920 @ 30fps ── */
+  :root {
+    --w: 1080px;
+    --h: 1920px;
+    /* Monitora brand greens */
+    --forest: #064e3b;
+    --forest-dark: #042f2e;
+    --emerald: #059669;
+    --accent: #4ADE80;
+    --light-mint: #ecfdf5;
+    --zen-dark: #091A14;
+    /* spring-like cubic-bezier (overshoot) */
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --spring-soft: cubic-bezier(0.22, 1.2, 0.36, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  body {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .canvas {
+    position: relative;
+    width: var(--w);
+    height: var(--h);
+    overflow: hidden;
+    background: var(--forest-dark);
+  }
+
+  /* ── Background layers ── */
+  .bg-gradient {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 120% 60% at 50% 100%, rgba(5,150,105,0.35) 0%, transparent 70%),
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(74,222,128,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 40%, rgba(6,78,59,0.5) 0%, transparent 60%),
+      linear-gradient(175deg, var(--zen-dark) 0%, var(--forest-dark) 40%, var(--forest) 100%);
+  }
+
+  /* Animated grid pattern */
+  .grid-pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74,222,128,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,222,128,0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0;
+    animation: fadeIn 1.5s 0.5s var(--ease-out) forwards;
+  }
+
+  /* Floating orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0;
+    animation: orbPulse 6s ease-in-out infinite, fadeIn 2s 1s var(--ease-out) forwards;
+  }
+  .orb-1 {
+    width: 400px; height: 400px;
+    background: rgba(5,150,105,0.3);
+    top: 15%; left: -10%;
+    animation-delay: 0s, 0.8s;
+  }
+  .orb-2 {
+    width: 300px; height: 300px;
+    background: rgba(74,222,128,0.15);
+    top: 55%; right: -8%;
+    animation-delay: 2s, 1.2s;
+  }
+  .orb-3 {
+    width: 250px; height: 250px;
+    background: rgba(6,78,59,0.4);
+    bottom: 10%; left: 20%;
+    animation-delay: 4s, 1.5s;
+  }
+
+  /* ── Horizontal accent lines ── */
+  .line {
+    position: absolute;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+  }
+  .line-1 {
+    width: 600px; top: 420px; left: -600px;
+    animation: slideLineRight 1.2s 2s var(--ease-out) forwards;
+  }
+  .line-2 {
+    width: 400px; bottom: 480px; right: -400px;
+    animation: slideLineLeft 1.2s 2.3s var(--ease-out) forwards;
+  }
+
+  /* ── Logo ── */
+  .logo-container {
+    position: absolute;
+    top: 540px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.5);
+    opacity: 0;
+    animation: springScaleIn 1s 1s var(--spring) forwards;
+  }
+  .logo-container img {
+    width: 260px;
+    height: 260px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 60px rgba(74,222,128,0.3));
+  }
+
+  /* ── Title: MONITORA ── */
+  .title {
+    position: absolute;
+    top: 840px;
+    width: 100%;
+    text-align: center;
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: 12px;
+    color: var(--light-mint);
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(60px);
+    animation: springSlideUp 1s 1.8s var(--spring) forwards;
+    text-shadow: 0 0 80px rgba(74,222,128,0.3);
+  }
+
+  /* ── Subtitle: PROTOTYPE ── */
+  .subtitle {
+    position: absolute;
+    top: 960px;
+    width: 100%;
+    text-align: center;
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: 20px;
+    color: var(--accent);
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(50px);
+    animation: springSlideUp 1s 2.3s var(--spring) forwards;
+  }
+
+  /* ── Divider bar ── */
+  .divider {
+    position: absolute;
+    top: 1050px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 200px;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    animation: expandBar 0.8s 2.8s var(--spring) forwards;
+  }
+
+  /* ── Tagline ── */
+  .tagline {
+    position: absolute;
+    top: 1100px;
+    width: 100%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: rgba(209,250,229,0.7);
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(40px);
+    animation: springSlideUp 0.9s 3.2s var(--spring-soft) forwards;
+  }
+
+  /* ── Bottom badge ── */
+  .badge {
+    position: absolute;
+    bottom: 200px;
+    left: 50%;
+    transform: translateX(-50%) translateY(30px);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 44px;
+    border: 1.5px solid rgba(74,222,128,0.25);
+    border-radius: 60px;
+    background: rgba(6,78,59,0.3);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    animation: springSlideUp 0.9s 3.8s var(--spring-soft) forwards;
+  }
+  .badge-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s 4s ease-in-out infinite;
+  }
+  .badge-text {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  /* ── Corner accents ── */
+  .corner {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+    animation: fadeIn 0.6s 4.2s var(--ease-out) forwards;
+  }
+  .corner-tl { top: 60px; left: 60px; border-top: 2px solid rgba(74,222,128,0.3); border-left: 2px solid rgba(74,222,128,0.3); }
+  .corner-tr { top: 60px; right: 60px; border-top: 2px solid rgba(74,222,128,0.3); border-right: 2px solid rgba(74,222,128,0.3); }
+  .corner-bl { bottom: 60px; left: 60px; border-bottom: 2px solid rgba(74,222,128,0.3); border-left: 2px solid rgba(74,222,128,0.3); }
+  .corner-br { bottom: 60px; right: 60px; border-bottom: 2px solid rgba(74,222,128,0.3); border-right: 2px solid rgba(74,222,128,0.3); }
+
+  /* ── Particle dots ── */
+  .particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .dot {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+  }
+  .dot:nth-child(1)  { top: 12%; left: 15%; animation: particleFloat 4s 1.5s ease-in-out infinite, fadeIn 1s 1.5s ease forwards; }
+  .dot:nth-child(2)  { top: 25%; right: 20%; animation: particleFloat 5s 2s ease-in-out infinite, fadeIn 1s 2s ease forwards; }
+  .dot:nth-child(3)  { top: 45%; left: 10%; animation: particleFloat 3.5s 2.5s ease-in-out infinite, fadeIn 1s 2.5s ease forwards; }
+  .dot:nth-child(4)  { top: 65%; right: 12%; animation: particleFloat 4.5s 1.8s ease-in-out infinite, fadeIn 1s 1.8s ease forwards; }
+  .dot:nth-child(5)  { top: 80%; left: 25%; animation: particleFloat 3.8s 3s ease-in-out infinite, fadeIn 1s 3s ease forwards; }
+  .dot:nth-child(6)  { top: 35%; left: 85%; animation: particleFloat 5.2s 2.2s ease-in-out infinite, fadeIn 1s 2.2s ease forwards; }
+  .dot:nth-child(7)  { top: 70%; left: 80%; animation: particleFloat 4.2s 2.8s ease-in-out infinite, fadeIn 1s 2.8s ease forwards; }
+  .dot:nth-child(8)  { top: 8%;  left: 70%; animation: particleFloat 3.6s 1.2s ease-in-out infinite, fadeIn 1s 1.2s ease forwards; }
+  .dot:nth-child(9)  { top: 90%; left: 55%; animation: particleFloat 4.8s 3.3s ease-in-out infinite, fadeIn 1s 3.3s ease forwards; }
+  .dot:nth-child(10) { top: 50%; left: 50%; animation: particleFloat 3.2s 1.6s ease-in-out infinite, fadeIn 1s 1.6s ease forwards; }
+
+  /* ── Scan-line sweep ── */
+  .scanline {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(74,222,128,0.04) 49%,
+      rgba(74,222,128,0.08) 50%,
+      rgba(74,222,128,0.04) 51%,
+      transparent 100%
+    );
+    background-size: 100% 40px;
+    opacity: 0;
+    animation: fadeIn 1s 1s ease forwards, scanMove 8s 1s linear infinite;
+  }
+
+  /* ── End fade out ── */
+  .canvas::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--zen-dark);
+    opacity: 0;
+    animation: fadeIn 1.5s 13.5s ease-in forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* ═══════════════ KEYFRAMES ═══════════════ */
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  @keyframes springScaleIn {
+    0%   { opacity: 0; transform: translateX(-50%) scale(0.3); }
+    70%  { opacity: 1; transform: translateX(-50%) scale(1.08); }
+    85%  { transform: translateX(-50%) scale(0.96); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  }
+
+  @keyframes springSlideUp {
+    0%   { opacity: 0; transform: translateY(60px); }
+    60%  { opacity: 1; transform: translateY(-8px); }
+    80%  { transform: translateY(3px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes expandBar {
+    0%   { opacity: 0; transform: translateX(-50%) scaleX(0); }
+    60%  { opacity: 1; transform: translateX(-50%) scaleX(1.1); }
+    100% { opacity: 1; transform: translateX(-50%) scaleX(1); }
+  }
+
+  @keyframes slideLineRight {
+    0%   { opacity: 0; left: -600px; }
+    100% { opacity: 0.5; left: 240px; }
+  }
+  @keyframes slideLineLeft {
+    0%   { opacity: 0; right: -400px; }
+    100% { opacity: 0.5; right: 340px; }
+  }
+
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15); }
+  }
+
+  @keyframes particleFloat {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
+    50%      { transform: translateY(-20px) scale(1.5); opacity: 0.8; }
+  }
+
+  @keyframes scanMove {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(1.3); }
+  }
+
+  /* ── Responsive preview (shrink on small screens) ── */
+  @media (max-height: 1920px) {
+    body { align-items: flex-start; }
+    .canvas { transform-origin: top center; transform: scale(min(1, calc(100vh / 1920))); }
+  }
+  @media (max-width: 1080px) {
+    .canvas { transform-origin: top left; transform: scale(min(1, min(calc(100vw / 1080), calc(100vh / 1920)))); }
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+  <!-- Background -->
+  <div class="bg-gradient"></div>
+  <div class="grid-pattern"></div>
+  <div class="scanline"></div>
+
+  <!-- Orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Particles -->
+  <div class="particles">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <!-- Accent lines -->
+  <div class="line line-1"></div>
+  <div class="line line-2"></div>
+
+  <!-- Corner accents -->
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <!-- Logo -->
+  <div class="logo-container">
+    <img src="logo-transparent.png" alt="Monitora Logo">
+  </div>
+
+  <!-- Typography -->
+  <div class="title">MONITORA</div>
+  <div class="subtitle">PROTOTYPE</div>
+  <div class="divider"></div>
+  <div class="tagline">BAPPEDA MALUKU UTARA</div>
+
+  <!-- Bottom badge -->
+  <div class="badge">
+    <div class="badge-dot"></div>
+    <div class="badge-text">SYSTEM ACTIVE</div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 <x-app-layout pageTitle="Dashboard Monitoring">
 {{-- ===== TOP CONTROL BAR ===== --}}
-<div class="px-4 sm:px-6 md:px-8 py-3.5 bg-[#f7faf8] border-b border-emerald-100/70 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 shrink-0">
+<div class="px-4 sm:px-6 md:px-8 py-4 flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-3 shrink-0 shadow-xs" style="background: linear-gradient(135deg, #ECFDF5 0%, #E6F7F0 45%, #D1FAE5 100%) !important; border-bottom: 2px solid #A7F3D0 !important;">
     {{-- Left: Title --}}
     <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center shadow-xs" style="background-color: #ECFDF5 !important; border: 1px solid #A7F3D0 !important; color: #059669 !important;">
@@ -19,35 +19,35 @@
 
     {{-- Right: Exec Stat Ticker --}}
     <div class="flex items-center flex-wrap gap-2">
-        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Total OPD</span>
                 <span class="text-base font-extrabold text-slate-900 leading-tight">{{ $totalOpd }}</span>
             </div>
             <span class="text-[10px] text-[#059669] font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">Mitra Aktif</span>
         </div>
-        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Tugas Aktif</span>
                 <span class="text-base font-extrabold text-slate-900 leading-tight">{{ $totalTugasAktif }}</span>
             </div>
             <span class="text-[10px] text-slate-400 font-medium">Kegiatan</span>
         </div>
-        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Belum Kumpul</span>
                 <span class="text-base font-extrabold text-amber-600 leading-tight">{{ $totalBelumKumpul }}</span>
             </div>
             <span class="text-[10px] text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">Menunggu</span>
         </div>
-        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Verifikasi</span>
                 <span class="text-base font-extrabold text-teal-700 leading-tight">{{ $totalMenungguVerifikasi }}</span>
             </div>
             <span class="text-[10px] text-teal-700 font-semibold bg-teal-50 px-1.5 py-0.5 rounded">Telaah Kabid</span>
         </div>
-        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white border border-emerald-100 shadow-xs whitespace-nowrap">
+        <div class="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] shadow-xs whitespace-nowrap">
             <div class="flex flex-col">
                 <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Diterima</span>
                 <span class="text-base font-extrabold text-emerald-600 leading-tight">{{ $totalDiterima }}</span>
@@ -88,7 +88,7 @@
         {{-- ===== COMPLIANCE BREAKDOWN CHARTS (OPD & ANGGOTA BIDANG) ===== --}}
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
             {{-- Card 1: Kepatuhan OPD --}}
-            <div class="bg-white rounded-3xl p-5 border border-emerald-100/80 shadow-xs flex flex-col justify-between gap-4 hover:border-emerald-200 transition-all hover:shadow-sm">
+            <div class="bg-white rounded-3xl p-5 border border-emerald-200 shadow-xs flex flex-col justify-between gap-4 border-t-4 border-t-[#059669] hover:border-emerald-300 transition-all hover:shadow-sm">
                 {{-- Card Header --}}
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div class="min-w-0">
@@ -162,7 +162,7 @@
             </div>
 
             {{-- Card 2: Kepatuhan Anggota Bidang --}}
-            <div class="bg-white rounded-3xl p-5 border border-emerald-100/80 shadow-xs flex flex-col justify-between gap-4 hover:border-emerald-200 transition-all hover:shadow-sm">
+            <div class="bg-white rounded-3xl p-5 border border-teal-200 shadow-xs flex flex-col justify-between gap-4 border-t-4 border-t-[#0D9488] hover:border-teal-300 transition-all hover:shadow-sm">
                 {{-- Card Header --}}
                 <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div class="min-w-0">
@@ -258,9 +258,9 @@
         </div>
 
         {{-- Tasks Table --}}
-        <div class="border border-emerald-100 rounded-2xl overflow-hidden bg-white shadow-xs flex-1">
+        <div class="border border-emerald-200 rounded-2xl overflow-hidden bg-white shadow-xs flex-1 border-t-4 border-t-[#059669]">
             {{-- Table Header --}}
-            <div class="grid grid-cols-12 px-5 py-3 bg-[#f7faf8] text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-emerald-100/70">
+            <div class="grid grid-cols-12 px-5 py-3.5 bg-gradient-to-r from-emerald-50/80 via-emerald-50/40 to-[#f7faf8] text-[11px] font-bold text-emerald-900 uppercase tracking-wider border-b border-emerald-100">
                 <div class="col-span-5">NAMA TUGAS</div>
                 <div class="col-span-3">DEADLINE</div>
                 <div class="col-span-2">PROGRES</div>

@@ -7,9 +7,11 @@
       x-data="{ 
         selectedOpds: [], 
         availableOpdIds: {{ json_encode($availableOpdIds) }},
+        opdList: {{ json_encode($opds->items()) }},
         showDeleteModal: false, 
-        showEditModal: false,
-        opdToEditId: '',
+        showCreateOpdModal: false,
+        showEditOpdModal: false,
+        editOpd: { id: '', kode_opd: '', nama_opd: '', alamat: '', is_active: 1 },
 
         selectAll() {
             this.selectedOpds = [...this.availableOpdIds];
@@ -31,25 +33,44 @@
             return this.availableOpdIds.length > 0 && this.availableOpdIds.every(id => this.selectedOpds.map(Number).includes(Number(id)));
         },
 
+        openCreateOpdModal() {
+            this.showCreateOpdModal = true;
+        },
+
+        openEditOpdModal(opd) {
+            this.editOpd = {
+                id: opd.id,
+                kode_opd: opd.kode_opd,
+                nama_opd: opd.nama_opd,
+                alamat: opd.alamat || '',
+                is_active: opd.is_active ? 1 : 0
+            };
+            this.showEditOpdModal = true;
+        },
+
         handleEdit() {
-            if (this.selectedOpds.length === 1) {
-                window.location.href = '/admin/opd/' + this.selectedOpds[0] + '/edit';
-            } else {
-                if (this.selectedOpds.length > 1) {
-                    this.opdToEditId = this.selectedOpds[0];
-                } else if (this.availableOpdIds.length > 0) {
-                    this.opdToEditId = this.availableOpdIds[0];
+            let targetId = null;
+            if (this.selectedOpds.length > 0) {
+                targetId = this.selectedOpds[0];
+            } else if (this.opdList.length > 0) {
+                targetId = this.opdList[0].id;
+            }
+
+            if (targetId) {
+                const found = this.opdList.find(o => Number(o.id) === Number(targetId));
+                if (found) {
+                    this.openEditOpdModal(found);
                 }
-                this.showEditModal = true;
+            } else {
+                alert('Tidak ada data OPD yang dapat diedit.');
             }
         },
 
-        proceedEdit() {
-            if (!this.opdToEditId) {
-                alert('Silakan pilih data OPD yang ingin diedit.');
-                return;
+        selectOpdToEdit(id) {
+            const found = this.opdList.find(o => Number(o.id) === Number(id));
+            if (found) {
+                this.openEditOpdModal(found);
             }
-            window.location.href = '/admin/opd/' + this.opdToEditId + '/edit';
         },
 
         handleDelete() {
@@ -99,12 +120,13 @@
                           class="px-2 py-0.5 rounded-full text-[10px] bg-rose-200 text-rose-800 font-extrabold"></span>
                 </button>
 
-                <!-- Tambah OPD Baru -->
-                <a href="{{ route('admin.opd.create') }}" 
-                   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full">
+                <!-- Tambah OPD Baru (Popup Modal) -->
+                <button type="button" 
+                        @click="openCreateOpdModal()" 
+                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#059669] hover:bg-[#047857] text-white text-[13px] font-semibold shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] shrink-0 self-start sm:self-auto rounded-full cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">add_circle</span>
                     <span>+ Tambah OPD Baru</span>
-                </a>
+                </button>
             </div>
         </div>
 
@@ -126,7 +148,7 @@
         {{-- ===== SUMMARY KPI CARDS ===== --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Card 1: Total Instansi --}}
-            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-5 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
                     <span class="material-symbols-outlined text-[22px]">corporate_fare</span>
                 </div>
@@ -138,7 +160,7 @@
             </div>
 
             {{-- Card 2: OPD Aktif --}}
-            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-5 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
                     <span class="material-symbols-outlined text-[22px]">verified</span>
                 </div>
@@ -150,7 +172,7 @@
             </div>
 
             {{-- Card 3: Staf OPD --}}
-            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-5 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200 flex items-center justify-center shrink-0 shadow-xs">
                     <span class="material-symbols-outlined text-[22px]">group</span>
                 </div>
@@ -162,7 +184,7 @@
             </div>
 
             {{-- Card 4: Total Tugas Masuk --}}
-            <div class="bg-white p-5 rounded-3xl border border-emerald-100/80 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
+            <div class="bg-gradient-to-br from-emerald-50/70 to-white p-5 rounded-3xl border border-emerald-200 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5">
                 <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0 shadow-xs">
                     <span class="material-symbols-outlined text-[22px]">folder_special</span>
                 </div>
@@ -292,11 +314,12 @@
                                                 <span class="px-2.5 py-0.5 rounded-full bg-[#f0f5f2] text-[#064e3b] font-mono text-[11px] border border-emerald-200 font-bold">
                                                     {{ $opd->kode_opd }}
                                                 </span>
-                                                <a href="{{ route('admin.opd.edit', $opd) }}" 
-                                                   class="font-bold text-slate-800 text-sm group-hover:text-[#059669] hover:underline transition" 
-                                                   title="Klik untuk mengedit data OPD ini">
+                                                <button type="button" 
+                                                        @click="openEditOpdModal({{ json_encode($opd->only(['id', 'kode_opd', 'nama_opd', 'alamat', 'is_active'])) }})" 
+                                                        class="font-bold text-slate-800 text-sm group-hover:text-[#059669] hover:underline transition text-left cursor-pointer" 
+                                                        title="Klik untuk mengedit data OPD ini">
                                                     {{ $opd->nama_opd }}
-                                                </a>
+                                                </button>
                                             </div>
                                             @if($opd->alamat)
                                                 <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-1 truncate max-w-md" title="{{ $opd->alamat }}">
@@ -365,17 +388,25 @@
 
                                 <!-- Status -->
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @if($opd->is_active)
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#059669] border border-emerald-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>
-                                            Aktif
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                            Nonaktif
-                                        </span>
-                                    @endif
+                                    <div class="flex items-center justify-center gap-2">
+                                        @if($opd->is_active)
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-[#059669] border border-emerald-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>
+                                                Aktif
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                Nonaktif
+                                            </span>
+                                        @endif
+                                        <button type="button" 
+                                                @click="openEditOpdModal({{ json_encode($opd->only(['id', 'kode_opd', 'nama_opd', 'alamat', 'is_active'])) }})"
+                                                class="w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#059669] border border-emerald-200 flex items-center justify-center transition shadow-2xs cursor-pointer"
+                                                title="Edit data OPD ini">
+                                            <span class="material-symbols-outlined text-[15px]">edit</span>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -471,50 +502,209 @@
             </div>
         </div>
 
-        {{-- ===== MODAL 2: Pilih OPD untuk Diedit ===== --}}
-        <div x-show="showEditModal" 
+        {{-- ===== MODAL CREATE OPD (Popup Tambah OPD Baru) ===== --}}
+        <div x-show="showCreateOpdModal" 
+             x-cloak
              style="display: none;" 
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div @click.away="showEditModal = false" 
-                 class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
-                <div class="flex items-center gap-3 text-[#064e3b] mb-4">
-                    <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-200">
-                        <span class="material-symbols-outlined text-[#059669] text-[26px]">edit_document</span>
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95">
+            <div @click.away="showCreateOpdModal = false" 
+                 class="bg-white rounded-[28px] max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-emerald-100 relative">
+                
+                <!-- Modal Header -->
+                <div class="flex items-start justify-between gap-3 pb-4 border-b border-emerald-100/70 mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                            <span class="material-symbols-outlined text-[24px]">domain_add</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 tracking-tight">Tambah Instansi OPD Baru</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Daftarkan instansi OPD Provinsi Maluku Utara</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900">Pilih OPD yang Ingin Diedit</h3>
-                        <p class="text-xs text-slate-500">Pilih satu instansi OPD untuk membuka formulir edit</p>
-                    </div>
+                    <button type="button" 
+                            @click="showCreateOpdModal = false" 
+                            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
                 </div>
 
-                <div class="mb-6 space-y-2">
-                    <label for="edit_opd_select" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Daftar Instansi OPD
+                <!-- Modal Form -->
+                <form method="POST" action="{{ route('admin.opd.store') }}" class="space-y-4">
+                    @csrf
+
+                    <div>
+                        <label for="modal_create_kode_opd" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Kode OPD <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="modal_create_kode_opd" 
+                               name="kode_opd" 
+                               required 
+                               placeholder="Contoh: DISPERINDAG" 
+                               class="w-full text-sm font-mono uppercase rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                        <span class="text-[11px] text-slate-400 mt-1 block">Kode singkat unik instansi (BPKAD, DKP, DISPAR)</span>
+                    </div>
+
+                    <div>
+                        <label for="modal_create_nama_opd" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Nama Lengkap Instansi OPD <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="modal_create_nama_opd" 
+                               name="nama_opd" 
+                               required 
+                               placeholder="Contoh: Dinas Perindustrian dan Perdagangan" 
+                               class="w-full text-sm font-semibold rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                    </div>
+
+                    <div>
+                        <label for="modal_create_alamat" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Alamat Kantor
+                        </label>
+                        <textarea id="modal_create_alamat" 
+                                  name="alamat" 
+                                  rows="2" 
+                                  placeholder="Contoh: Jl. Trans Halmahera, Gosale, Sofifi" 
+                                  class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="pt-1">
+                        <label class="inline-flex items-center cursor-pointer gap-2.5">
+                            <input type="checkbox" name="is_active" value="1" checked class="rounded border-slate-300 text-[#059669] focus:ring-[#059669] w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700">Status OPD Aktif &amp; Operasional</span>
+                        </label>
+                    </div>
+
+                    <!-- Modal Actions -->
+                    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
+                        <button type="button" 
+                                @click="showCreateOpdModal = false" 
+                                class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+                            <span class="material-symbols-outlined text-[17px]">save</span>
+                            <span>Simpan Data OPD</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- ===== MODAL EDIT OPD (Popup Edit Data OPD) ===== --}}
+        <div x-show="showEditOpdModal" 
+             x-cloak
+             style="display: none;" 
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 transform scale-95"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-95">
+            <div @click.away="showEditOpdModal = false" 
+                 class="bg-white rounded-[28px] max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-emerald-100 relative">
+                
+                <!-- Modal Header -->
+                <div class="flex items-start justify-between gap-3 pb-4 border-b border-emerald-100/70 mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-[#059669] border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+                            <span class="material-symbols-outlined text-[24px]">edit_document</span>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 tracking-tight">Edit Data Instansi OPD</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Perbarui informasi dan status instansi OPD</p>
+                        </div>
+                    </div>
+                    <button type="button" 
+                            @click="showEditOpdModal = false" 
+                            class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
+
+                <!-- Switch OPD Selector (if multiple available) -->
+                <div class="mb-4" x-show="opdList.length > 1">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Pilih Instansi Lain Untuk Diedit:
                     </label>
-                    <select id="edit_opd_select" 
-                            x-model="opdToEditId" 
-                            class="w-full text-sm rounded-2xl border border-slate-200 bg-[#f0f5f2] p-3 focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/20 font-medium">
-                        <option value="">-- Pilih Instansi OPD --</option>
-                        @foreach($opds as $opdItem)
-                            <option value="{{ $opdItem->id }}">
-                                [{{ $opdItem->kode_opd }}] {{ $opdItem->nama_opd }}
-                            </option>
-                        @endforeach
+                    <select @change="selectOpdToEdit($event.target.value)" 
+                            :value="editOpd.id"
+                            class="w-full text-xs rounded-xl border border-slate-200 bg-[#f0f5f2] px-3 py-2 font-medium">
+                        <template x-for="item in opdList" :key="item.id">
+                            <option :value="item.id" :selected="Number(item.id) === Number(editOpd.id)" x-text="'[' + item.kode_opd + '] ' + item.nama_opd"></option>
+                        </template>
                     </select>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                    <button type="button" 
-                            @click="showEditModal = false" 
-                            class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
-                        Batal
-                    </button>
-                    <button type="button" 
-                            @click="proceedEdit()" 
-                            class="px-6 py-2.5 rounded-full bg-[#059669] text-white font-bold text-xs hover:bg-[#047857] shadow-sm transition cursor-pointer">
-                        Buka Formulir Edit
-                    </button>
-                </div>
+                <!-- Modal Form -->
+                <form method="POST" :action="'/admin/opd/' + editOpd.id" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <label for="modal_edit_kode_opd" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Kode OPD <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="modal_edit_kode_opd" 
+                               name="kode_opd" 
+                               x-model="editOpd.kode_opd"
+                               required 
+                               class="w-full text-sm font-mono uppercase rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                    </div>
+
+                    <div>
+                        <label for="modal_edit_nama_opd" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Nama Lengkap Instansi OPD <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="modal_edit_nama_opd" 
+                               name="nama_opd" 
+                               x-model="editOpd.nama_opd"
+                               required 
+                               class="w-full text-sm font-semibold rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all">
+                    </div>
+
+                    <div>
+                        <label for="modal_edit_alamat" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                            Alamat Kantor
+                        </label>
+                        <textarea id="modal_edit_alamat" 
+                                  name="alamat" 
+                                  x-model="editOpd.alamat"
+                                  rows="2" 
+                                  class="w-full text-sm rounded-xl bg-[#f0f5f2] focus:bg-white border border-transparent focus:border-[#059669] px-3.5 py-2.5 focus:ring-2 focus:ring-[#059669]/20 transition-all leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="pt-1">
+                        <label class="inline-flex items-center cursor-pointer gap-2.5">
+                            <input type="checkbox" name="is_active" value="1" x-model="editOpd.is_active" class="rounded border-slate-300 text-[#059669] focus:ring-[#059669] w-4 h-4">
+                            <span class="text-xs font-bold text-slate-700">Status OPD Aktif &amp; Operasional</span>
+                        </label>
+                    </div>
+
+                    <!-- Modal Actions -->
+                    <div class="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 mt-6">
+                        <button type="button" 
+                                @click="showEditOpdModal = false" 
+                                class="px-5 py-2.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" 
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+                            <span class="material-symbols-outlined text-[17px]">save</span>
+                            <span>Perbarui Data OPD</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
